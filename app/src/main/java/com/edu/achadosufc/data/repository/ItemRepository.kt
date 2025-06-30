@@ -12,7 +12,7 @@ class ItemRepository {
 
     init {
         val retrofit = Retrofit.Builder()
-            .baseUrl("http://10.0.2.2:3000")
+            .baseUrl("https://achados-ufc-api-hch7.vercel.app/")
             .addConverterFactory(GsonConverterFactory.create())
             .build()
 
