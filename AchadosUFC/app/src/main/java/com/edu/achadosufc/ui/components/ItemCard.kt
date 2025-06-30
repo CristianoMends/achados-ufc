@@ -25,13 +25,18 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
-import com.edu.achadosufc.model.item.Item
+import com.edu.achadosufc.data.model.Item
 import com.edu.achadosufc.ui.screen.Screen
+import com.edu.achadosufc.utils.getRelativeTime
 import com.edu.achadosufc.viewModel.ItemViewModel
 
 
 @Composable
-fun ItemCard(item: Item, navController: NavController, itemViewModel: ItemViewModel = viewModel()) {
+fun ItemCard(
+    item: Item,
+    navController: NavController,
+    itemViewModel: ItemViewModel
+) {
     Card(
         modifier = Modifier
             .padding(20.dp)

@@ -1,4 +1,4 @@
-package com.edu.achadosufc.model.file
+package com.edu.achadosufc.data.model
 
 data class UploadResponse(
     val message: String,

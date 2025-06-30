@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.edu.achadosufc.R
+import com.edu.achadosufc.ui.components.MessageDialog
 import com.edu.achadosufc.viewModel.LoginViewModel
 
 @Composable
@@ -134,8 +135,14 @@ fun LoginScreen(
                 )
 
                 if (!error.isNullOrEmpty()) {
-                    Text(error ?: "", color = MaterialTheme.colorScheme.error)
+                    MessageDialog(
+                        title = "Erro",
+                        message = error ?: "",
+                        confirmButtonText = "OK",
+                        confirmButtonAction = { loginViewModel.clearErrorMessage() }
+                    )
                 }
+
 
                 Button(
                     onClick = {
@@ -162,7 +169,6 @@ fun LoginScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clickable {
-                            loginViewModel.updateKeepLoggedInPreference(!loginViewModel.keepLoggedIn.value)
                         },
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.Center,
@@ -170,8 +176,8 @@ fun LoginScreen(
                     ) {
                     Checkbox(
                         checked = keepLoggedIn,
-                        onCheckedChange = { isChecked ->
-                            // loginViewModel.updateKeepLoggedInPreference(isChecked)
+                        onCheckedChange = {
+                            loginViewModel.updateKeepLoggedInPreference(!loginViewModel.keepLoggedIn.value)
                         },
                         modifier = Modifier
                             .size(5.dp)
@@ -186,14 +192,18 @@ fun LoginScreen(
                     Text(
                         "Mantenha-me conectado(a)",
                         color = Color(0xFFE3E3E3),
-                        style = MaterialTheme.typography.labelSmall
+                        style = MaterialTheme.typography.labelSmall,
+                        modifier = Modifier.clickable {
+                            loginViewModel.updateKeepLoggedInPreference(!loginViewModel.keepLoggedIn.value)
+
+                        }
                     )
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
 
                 Text(
-                    text = "Cadastrar",
+                    text = "Criar conta",
                     color = Color(0xFFE3E3E3),
                     style = MaterialTheme.typography.bodyLarge,
                     textDecoration = TextDecoration.Underline,

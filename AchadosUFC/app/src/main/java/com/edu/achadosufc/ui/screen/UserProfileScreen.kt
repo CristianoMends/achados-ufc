@@ -21,8 +21,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Button
@@ -48,7 +48,6 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.edu.achadosufc.ui.components.AppTopBar
@@ -61,8 +60,8 @@ fun UserProfileScreen(
     navController: NavController,
     isDarkTheme: Boolean,
     onToggleTheme: () -> Unit,
-    loginViewModel: LoginViewModel = viewModel(),
-    itemViewModel: ItemViewModel = viewModel()
+    loginViewModel: LoginViewModel,
+    itemViewModel: ItemViewModel
 ) {
 
     val user by loginViewModel.loggedUser.collectAsStateWithLifecycle()
@@ -95,9 +94,7 @@ fun UserProfileScreen(
         topBar = {
             AppTopBar(
                 title = "Perfil de ${user?.username ?: ""}",
-                showBackButton = true,
                 isDarkTheme = isDarkTheme,
-                onBackClick = { navController.popBackStack() },
                 onToggleTheme = onToggleTheme
             )
         },
@@ -115,7 +112,7 @@ fun UserProfileScreen(
                 )
                 NavigationBarItem(
                     icon = { Icon(Icons.Default.Add, contentDescription = "Relatar") },
-                    label = { Text("Relatar") },
+                    label = { Text("Publicar") },
                     selected = false,
                     onClick = {
                         navController.navigate(Screen.ReportItem.route)
@@ -231,7 +228,7 @@ fun UserProfileScreen(
                                     modifier = Modifier.fillMaxWidth()
                                 ) {
                                     Icon(
-                                        Icons.Filled.ExitToApp,
+                                        Icons.AutoMirrored.Filled.ExitToApp,
                                         contentDescription = "Sair"
                                     )
                                     Spacer(Modifier.width(8.dp))

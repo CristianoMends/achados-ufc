@@ -49,9 +49,9 @@ fun UserDetailScreen(
     isDarkTheme: Boolean = false,
     onToggleTheme: () -> Unit = { },
     navController: NavController,
-    userId: Int
+    userId: Int,
+    userViewModel: UserViewModel
 ) {
-    val userViewModel: UserViewModel = viewModel()
 
     val user by userViewModel.selectedUser.collectAsState()
     val userItems by userViewModel.userItems.collectAsState()

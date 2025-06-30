@@ -4,10 +4,10 @@ import android.content.Context
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.edu.achadosufc.model.file.FileRepository
-import com.edu.achadosufc.model.user.UserPreferencesRepository
-import com.edu.achadosufc.model.user.UserRepository
-import com.edu.achadosufc.model.user.UserRequest
+import com.edu.achadosufc.data.model.UserRequest
+import com.edu.achadosufc.data.repository.FileRepository
+import com.edu.achadosufc.data.repository.UserPreferencesRepository
+import com.edu.achadosufc.data.repository.UserRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
@@ -19,8 +19,8 @@ import okhttp3.RequestBody.Companion.asRequestBody
 import java.io.File
 
 class SignUpViewModel(
-    private val uploadRepository: FileRepository = FileRepository(),
-    private val userRepository: UserRepository = UserRepository(),
+    private val uploadRepository: FileRepository,
+    private val userRepository: UserRepository,
     private val userPreferencesRepository: UserPreferencesRepository,
     private val applicationContext: Context
 ) : ViewModel() {

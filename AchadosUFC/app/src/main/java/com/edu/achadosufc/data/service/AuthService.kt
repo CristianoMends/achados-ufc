@@ -1,5 +1,7 @@
-package com.edu.achadosufc.model.login
+package com.edu.achadosufc.data.service
 
+import com.edu.achadosufc.data.model.Login
+import com.edu.achadosufc.data.model.LoginResponse
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.POST

@@ -32,7 +32,7 @@ const isProd = process.env.NODE_ENV === 'production';
       //logging: true,
     }),
     ItemsModule,
-    UploadModule
+    UploadModule,
   ],
   controllers: [AppController],
   providers: [AppService],

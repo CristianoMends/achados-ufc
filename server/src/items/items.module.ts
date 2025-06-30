@@ -8,7 +8,7 @@ import { ConfigModule } from '@nestjs/config';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Item, User]),
-    ConfigModule
+    ConfigModule,
   ],
   controllers: [ItemsController],
   providers: [ItemService],

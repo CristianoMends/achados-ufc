@@ -1,5 +1,8 @@
-package com.edu.achadosufc.model.item
+package com.edu.achadosufc.data.repository
 
+import com.edu.achadosufc.data.model.Item
+import com.edu.achadosufc.data.model.ItemRequest
+import com.edu.achadosufc.data.service.ItemService
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
@@ -49,9 +52,35 @@ class ItemRepository {
         }
     }
 
+    suspend fun create(item: ItemRequest) {
+
+        try {
+            val res = this.api.create(item)
+
+            if (res != null) {
+                if (res.isSuccessful) {
+                    val responseBody = res.body()
+                    responseBody?.let {
+                        this.items.add(it)
+                    }
+                    responseBody ?: throw Exception("Item creation failed")
+                } else {
+                    val errorBody = res?.errorBody()?.string()
+                    throw Exception("Error creating item: $errorBody")
+                }
+            }
+        } catch (e: Exception) {
+            throw Exception("Error creating item: ${e.message}")
+        }
+    }
+
     suspend fun getAllByUserId(userId: Int): List<Item> {
         val items = getAllItems()
         return items.filter { it.user.id == userId }
+    }
+
+    fun sendInteractionNotification(itemId: Int) {
+
     }
 
 }

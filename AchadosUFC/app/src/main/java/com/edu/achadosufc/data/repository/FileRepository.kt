@@ -1,5 +1,7 @@
-package com.edu.achadosufc.model.file
+package com.edu.achadosufc.data.repository
 
+import com.edu.achadosufc.data.model.UploadResponse
+import com.edu.achadosufc.data.service.FileService
 import okhttp3.MultipartBody
 import retrofit2.Response
 import retrofit2.Retrofit

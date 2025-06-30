@@ -31,20 +31,16 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.edu.achadosufc.ui.components.AppTopBar
-import com.edu.achadosufc.ui.components.getRelativeTime
+import com.edu.achadosufc.utils.getRelativeTime
 import com.edu.achadosufc.viewModel.ItemViewModel
 import com.edu.achadosufc.viewModel.LoginViewModel
 
@@ -53,14 +49,16 @@ fun ItemDetailScreen(
     isDarkTheme: Boolean = false,
     onToggleTheme: () -> Unit = { },
     navController: NavController,
-    itemId: Int
+    itemId: Int,
+    itemViewModel: ItemViewModel,
+    loginViewModel: LoginViewModel
 ) {
-    val itemViewModel: ItemViewModel = viewModel()
-    val loginViewModel: LoginViewModel = viewModel()
 
     val item by itemViewModel.selectedItem.collectAsState()
     val isLoading by itemViewModel.isLoading.collectAsState()
     val errorMessage by itemViewModel.errorMessage.collectAsState()
+    val loggedUser by loginViewModel.loggedUser.collectAsState()
+
 
     LaunchedEffect(itemId) {
         if (itemId != -1) {
@@ -201,20 +199,16 @@ fun ItemDetailScreen(
 
                                     Button(
                                         onClick = {
-                                            // TODO: Implementar a lógica de contato/reivindicação
-                                            if (item!!.isFound && item!!.user.id != loginViewModel.loggedUser.value?.id) {
-                                                // Lógica para "Eu Perdi Isso!" / Contatar o doador
-                                                // Ex: Abrir tela de contato, preencher formulário de reivindicação
-                                                println("Ação: Entrar em Contato com o Doador para ${item?.title}")
-                                            } else {
-                                                // Lógica para "Eu Encontrei Isso!" / Oferecer ajuda
-                                                // Ex: Abrir tela para registrar que encontrou, fornecer dados de contato
-                                                println("Ação: Oferecer Ajuda para ${item?.title}")
+                                            if (item != null && loggedUser != null) {
+                                                itemViewModel.notifyItemOwner(
+                                                    itemId = item!!.id
+                                                )
                                             }
                                         },
                                         modifier = Modifier
                                             .fillMaxWidth()
-                                            .padding(vertical = 8.dp)
+                                            .padding(vertical = 8.dp),
+                                        enabled = item?.user?.id != loggedUser?.id
                                     ) {
                                         Text(
                                             text = if (item!!.isFound) "Eu Perdi Isso!" else "Eu Encontrei Isso!",

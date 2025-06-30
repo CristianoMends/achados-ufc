@@ -2,15 +2,14 @@ package com.edu.achadosufc.viewModel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.edu.achadosufc.model.item.Item
-import com.edu.achadosufc.model.item.ItemRepository
-import com.edu.achadosufc.model.user.UserResponse // Se não for usado, pode ser removido
+import com.edu.achadosufc.data.model.Item
+import com.edu.achadosufc.data.repository.ItemRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
-class ItemViewModel(
-    private val itemRepository: ItemRepository = ItemRepository()
+class ItemViewModel (
+    private val itemRepository: ItemRepository
 ) : ViewModel() {
     private var _items = MutableStateFlow<List<Item>>(emptyList())
     val items: StateFlow<List<Item>> = _items
@@ -66,6 +65,19 @@ class ItemViewModel(
                 _errorMessage.value = "Erro ao carregar detalhes do item: ${e.message}"
             } finally {
                 _isLoading.value = false
+            }
+        }
+    }
+
+    fun notifyItemOwner(itemId: Int) {
+        viewModelScope.launch {
+            try {
+                itemRepository.sendInteractionNotification(itemId)
+
+                println("Sucesso: Solicitação de notificação enviada para o item $itemId.")
+            } catch (e: Exception) {
+                setErrorMessage("Falha ao notificar: ${e.message}")
+                println("Erro ao enviar notificação: ${e.message}")
             }
         }
     }

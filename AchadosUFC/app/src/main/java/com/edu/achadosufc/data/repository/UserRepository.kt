@@ -1,5 +1,9 @@
-package com.edu.achadosufc.model.user
+package com.edu.achadosufc.data.repository
 
+import android.util.Log
+import com.edu.achadosufc.data.model.UserRequest
+import com.edu.achadosufc.data.model.UserResponse
+import com.edu.achadosufc.data.service.UserService
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
@@ -84,4 +88,5 @@ class UserRepository {
             return null
         }
     }
+
 }

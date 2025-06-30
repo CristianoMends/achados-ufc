@@ -1,23 +1,28 @@
 package com.edu.achadosufc.viewModel
 
+import android.content.Context
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.edu.achadosufc.model.login.LoginRepository
-import com.edu.achadosufc.model.user.UserRepository
-import com.edu.achadosufc.model.user.UserResponse
+import com.edu.achadosufc.data.SessionManager
+import com.edu.achadosufc.data.model.UserResponse
+import com.edu.achadosufc.data.repository.LoginRepository
+import com.edu.achadosufc.data.repository.UserPreferencesRepository
+import com.edu.achadosufc.data.repository.UserRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
-import com.edu.achadosufc.model.user.UserPreferencesRepository
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 
 class LoginViewModel(
-    private val userRepository: UserRepository = UserRepository(),
-    private val loginRepository: LoginRepository = LoginRepository(),
-    private val userPreferencesRepository: UserPreferencesRepository
+    private val userRepository: UserRepository,
+    private val loginRepository: LoginRepository,
+    private val userPreferencesRepository: UserPreferencesRepository,
+    context: Context
 ) : ViewModel() {
 
+    private val sessionManager: SessionManager = SessionManager(context)
     private val _loggedUser = MutableStateFlow<UserResponse?>(null)
     val loggedUser: StateFlow<UserResponse?> = _loggedUser
 
@@ -118,21 +123,27 @@ class LoginViewModel(
 
                     if (user != null) {
                         _loggedUser.value = user
+                        sessionManager.saveAuthToken(res.access_token)
                         if (_keepLoggedIn.value) {
                             userPreferencesRepository.saveUserId(user.id)
                         } else {
                             userPreferencesRepository.clearUserId()
                         }
-
                     } else {
-                        _error.value =
-                            "Login bem-sucedido, mas dados do usuário não encontrados."
+                        _error.value = "Login bem-sucedido, mas dados do usuário não encontrados."
                     }
                 } else {
                     _error.value = "Usuário ou senha inválidos"
                 }
             } catch (e: Exception) {
-                _error.value = e.message
+                if (e.message?.contains("failed to connect", ignoreCase = true) == true ||
+                    e.message?.contains("unable to resolve host", ignoreCase = true) == true ||
+                    e.message?.contains("timeout", ignoreCase = true) == true
+                ) {
+                    _error.value = "Servidor indisponível. Tente novamente mais tarde."
+                } else {
+                    _error.value = e.message ?: "Erro desconhecido ao tentar fazer login."
+                }
             } finally {
                 _loading.value = false
             }

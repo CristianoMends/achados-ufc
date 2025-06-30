@@ -2,17 +2,17 @@ package com.edu.achadosufc.viewModel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.edu.achadosufc.model.item.Item
-import com.edu.achadosufc.model.item.ItemRepository
-import com.edu.achadosufc.model.user.UserRepository
-import com.edu.achadosufc.model.user.UserResponse
+import com.edu.achadosufc.data.model.Item
+import com.edu.achadosufc.data.model.UserResponse
+import com.edu.achadosufc.data.repository.ItemRepository
+import com.edu.achadosufc.data.repository.UserRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
 class UserViewModel(
-    private val userRepository: UserRepository = UserRepository(),
-    private val itemRepository: ItemRepository = ItemRepository()
+    private val userRepository: UserRepository,
+    private val itemRepository: ItemRepository
 ) : ViewModel() {
 
     private val _selectedUser = MutableStateFlow<UserResponse?>(null)

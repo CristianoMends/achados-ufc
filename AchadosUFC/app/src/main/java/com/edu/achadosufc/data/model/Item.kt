@@ -1,6 +1,5 @@
-package com.edu.achadosufc.model.item
+package com.edu.achadosufc.data.model
 
-import com.edu.achadosufc.model.user.UserResponse
 
 data class Item(
     val id: Int = 0,

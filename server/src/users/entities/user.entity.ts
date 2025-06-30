@@ -18,7 +18,7 @@ export class User {
     password: String;
 
     @Column({ type: 'varchar', length: 255 })
-    name: string ;
+    name: string;
 
     @Column({ type: 'varchar', length: 20, nullable: true })
     phone: string | null;

@@ -1,4 +1,4 @@
-package com.edu.achadosufc.model.user
+package com.edu.achadosufc.data.model
 
 data class UserResponse(
     val id: Int,

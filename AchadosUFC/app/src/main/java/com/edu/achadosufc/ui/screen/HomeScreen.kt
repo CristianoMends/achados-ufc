@@ -15,22 +15,23 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.traversalIndex
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.edu.achadosufc.ui.components.AppTopBar
 import com.edu.achadosufc.ui.components.ItemCard
+import com.edu.achadosufc.viewModel.ItemViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     isDarkTheme: Boolean,
     navController: NavController,
-    viewModel: HomeViewModel = viewModel(),
+    homeViewModel: HomeViewModel,
+    itemViewModel: ItemViewModel,
     onToggleTheme: () -> Unit
 ) {
-    val allItems by viewModel.items.collectAsState()
+    val allItems by homeViewModel.items.collectAsState()
     LaunchedEffect(Unit) {
-        viewModel.getItems()
+        homeViewModel.getItems()
     }
     var searchText by remember { mutableStateOf("") }
     val filteredItems by remember(allItems, searchText) {
@@ -65,8 +66,8 @@ fun HomeScreen(
                     onClick = {}
                 )
                 NavigationBarItem(
-                    icon = { Icon(Icons.Default.Add, contentDescription = "Relatar") },
-                    label = { Text("Relatar") },
+                    icon = { Icon(Icons.Default.Add, contentDescription = "Publicar") },
+                    label = { Text("Publicar") },
                     selected = false,
                     onClick = {
                         navController.navigate(Screen.ReportItem.route)
@@ -88,25 +89,46 @@ fun HomeScreen(
                 .padding(padding)
                 .fillMaxSize()
         ) {
+            val onActiveChange = { }
+            val colors1 = SearchBarDefaults.colors()
             SearchBar(
+                inputField = {
+                    SearchBarDefaults.InputField(
+                        query = searchText,
+                        onQueryChange = { searchText = it },
+                        onSearch = { },
+                        expanded = false,
+                        onExpandedChange = { onActiveChange },
+                        enabled = true,
+                        placeholder = { Text("Buscar") },
+                        leadingIcon = {
+                            Icon(
+                                Icons.Filled.Search,
+                                contentDescription = "Ícone de busca"
+                            )
+                        },
+                        trailingIcon = null,
+                        interactionSource = null,
+                    )
+                },
+                expanded = false,
+                onExpandedChange = { onActiveChange },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 8.dp)
                     .semantics { traversalIndex = 0f },
-                query = searchText,
-                onQueryChange = { searchText = it },
-                onSearch = { },
-                placeholder = { Text("Buscar") },
-                leadingIcon = { Icon(Icons.Filled.Search, contentDescription = "Ícone de busca") },
-                active = false,
-                onActiveChange = { }
-            ) {
-            }
+                shape = SearchBarDefaults.inputFieldShape,
+                colors = colors1,
+                tonalElevation = SearchBarDefaults.TonalElevation,
+                shadowElevation = SearchBarDefaults.ShadowElevation,
+                windowInsets = SearchBarDefaults.windowInsets,
+                content = {},
+            )
             LazyColumn(
                 contentPadding = PaddingValues(horizontal = 16.dp)
             ) {
                 items(filteredItems) { item ->
-                    ItemCard(item = item, navController)
+                    ItemCard(item = item, navController, itemViewModel)
                 }
                 if (filteredItems.isEmpty() && searchText.isNotBlank()) {
                     item {

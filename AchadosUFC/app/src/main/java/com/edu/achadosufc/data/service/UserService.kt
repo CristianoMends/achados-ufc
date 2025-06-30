@@ -1,5 +1,7 @@
-package com.edu.achadosufc.model.user
+package com.edu.achadosufc.data.service
 
+import com.edu.achadosufc.data.model.UserRequest
+import com.edu.achadosufc.data.model.UserResponse
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET

@@ -4,21 +4,21 @@ import { Column, CreateDateColumn, Entity, ManyToOne, PrimaryGeneratedColumn } f
 @Entity()
 export class Item {
 
-    @PrimaryGeneratedColumn()
-    id: number;
-    @Column()
-    title: String;
-    @Column()
-    description: String;
-    @Column()
-    imageUrl: String;
-    @Column()
-    location: String;
-    @CreateDateColumn()
-    date: String;
-    @Column({ default: false })
-    isFound: Boolean = false;
-    @ManyToOne(() => User, user => user.items, { eager: true, onDelete: 'CASCADE' })
-    user: User
+  @PrimaryGeneratedColumn()
+  id: number;
+  @Column()
+  title: String;
+  @Column()
+  description: String;
+  @Column()
+  imageUrl: String;
+  @Column()
+  location: String;
+  @CreateDateColumn()
+  date: String;
+  @Column({ default: false })
+  isFound: Boolean = false;
+  @ManyToOne(() => User, user => user.items, { eager: true, onDelete: 'CASCADE' })
+  user: User
   item: Date;
 }

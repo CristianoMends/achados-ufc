@@ -76,7 +76,9 @@ export class ItemService {
   }
 
   async findAll(): Promise<ViewItemDto[]> {
-    const items = await this.itemRepository.find();
+    const items = await this.itemRepository.find({
+      order: { date: 'DESC' },
+    });
 
     return items.map(i => new ViewItemDto(i));
   }
