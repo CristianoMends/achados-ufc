@@ -26,7 +26,6 @@ fun LoadingDialog(
             Column(
                 modifier = Modifier
                     .padding(16.dp)
-                   // .background(MaterialTheme.colorScheme.surface)
                     .padding(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(8.dp)

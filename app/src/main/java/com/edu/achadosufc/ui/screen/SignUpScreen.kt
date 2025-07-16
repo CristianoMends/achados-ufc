@@ -57,13 +57,14 @@ import coil.compose.AsyncImage
 import com.edu.achadosufc.ui.components.AppTopBar
 import com.edu.achadosufc.ui.components.MessageDialog
 import com.edu.achadosufc.viewModel.SignUpViewModel
+import com.edu.achadosufc.viewModel.ThemeViewModel
 
 @Composable
 fun SignUpScreen(
     navController: NavController,
-    isDarkTheme: Boolean,
-    onToggleTheme: () -> Unit,
-    signUpViewModel: SignUpViewModel
+    signUpViewModel: SignUpViewModel,
+    themeViewModel: ThemeViewModel
+
 ) {
     val username by signUpViewModel.username.collectAsStateWithLifecycle()
     val name by signUpViewModel.name.collectAsStateWithLifecycle()
@@ -100,9 +101,8 @@ fun SignUpScreen(
             AppTopBar(
                 title = "Cadastre-se",
                 showBackButton = true,
-                isDarkTheme = isDarkTheme,
                 onBackClick = { navController.popBackStack() },
-                onToggleTheme = onToggleTheme
+                themeViewModel= themeViewModel
             )
         }
     ) { paddingValues ->

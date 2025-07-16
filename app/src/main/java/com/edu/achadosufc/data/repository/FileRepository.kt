@@ -7,18 +7,9 @@ import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
-class FileRepository {
-
+class FileRepository(
     private val api: FileService
-
-    init {
-        val retrofit = Retrofit.Builder()
-            .baseUrl("https://achados-ufc-api-hch7.vercel.app")
-            .addConverterFactory(GsonConverterFactory.create())
-            .build()
-
-        api = retrofit.create(FileService::class.java)
-    }
+) {
 
     suspend fun uploadFile(filePart: MultipartBody.Part): UploadResponse {
         try {

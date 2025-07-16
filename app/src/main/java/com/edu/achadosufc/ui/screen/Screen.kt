@@ -1,6 +1,8 @@
 package com.edu.achadosufc.ui.screen
 
 sealed class Screen(val route: String) {
+    data object Splash : Screen("splash_screen")
+
     data object Home : Screen("home/{userId}") {
         fun createRoute(userId: Int): String = "home/$userId"
     }
@@ -15,6 +17,7 @@ sealed class Screen(val route: String) {
 
     data object SignUp : Screen("sign_up_screen")
 
+    data object Search : Screen("search_screen")
 
     data object UserDetail : Screen("user_detail/{userId}") {
         fun createRoute(userId: Int) = "user_detail/$userId"

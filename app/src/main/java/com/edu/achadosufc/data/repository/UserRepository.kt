@@ -1,92 +1,100 @@
 package com.edu.achadosufc.data.repository
 
 import android.util.Log
+import com.edu.achadosufc.data.dao.UserDao
 import com.edu.achadosufc.data.model.UserRequest
 import com.edu.achadosufc.data.model.UserResponse
+import com.edu.achadosufc.data.model.toUserEntity
+import com.edu.achadosufc.data.model.toUserResponse
 import com.edu.achadosufc.data.service.UserService
-import retrofit2.Retrofit
-import retrofit2.converter.gson.GsonConverterFactory
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
+import retrofit2.HttpException
+import java.net.UnknownHostException
 
-class UserRepository {
-    private val api: UserService
+class UserRepository(
+    private val apiService: UserService,
+    private val userDao: UserDao
+) {
 
-    init {
-        val retrofit = Retrofit.Builder()
-            .baseUrl("https://achados-ufc-api-hch7.vercel.app/")
-            .addConverterFactory(GsonConverterFactory.create())
-            .build()
-
-        api = retrofit.create(UserService::class.java)
+    fun getUserByIdLocal(userId: Int): Flow<UserResponse?> {
+        return userDao.getUserById(userId).map { it?.toUserResponse() }
     }
 
+    fun getUserByUsernameLocal(username: String): Flow<UserResponse?> {
+        return userDao.getUserByUsername(username).map { it?.toUserResponse() }
+    }
 
-    suspend fun findAll(): List<UserResponse>? {
-
+    suspend fun fetchUserByIdAndSave(userId: Int): UserResponse? {
         try {
-            val response = api.getAllUsers()
 
+            val response = apiService.getAllUsers()
             if (response.isSuccessful) {
-                val responseBody = response.body()
+                val usersFromApi = response.body() ?: emptyList()
+                val userToSave = usersFromApi.find { it.id == userId }
+                userToSave?.let {
+                    userDao.insertUser(it.toUserEntity())
 
-                return responseBody
+                    return it
+                } ?: run {
+                    return null
+                }
             } else {
                 val errorBody = response.errorBody()?.string()
-                return null
+                throw HttpException(response)
             }
-        } catch (e: Exception) {
-
+        } catch (e: UnknownHostException) {
             return null
+        } catch (e: Exception) {
+            throw e
         }
     }
 
-    suspend fun findById(id: Int): UserResponse? {
-        try {
-            val response = api.getAllUsers()
 
+
+    suspend fun fetchUserByUsernameAndSave(username: String): UserResponse? {
+        try {
+
+            val response = apiService.getUserByUsername(username)
             if (response.isSuccessful) {
-                val responseBody = response.body()?.find { it.id == id }
-                return responseBody
+                val userFromApi = response.body()
+                userFromApi?.let {
+                    userDao.insertUser(it.toUserEntity())
+
+                    return it
+                } ?: run {
+                    return null
+                }
             } else {
                 val errorBody = response.errorBody()?.string()
-                return null
+                throw HttpException(response)
             }
-        } catch (e: Exception) {
-
+        } catch (e: UnknownHostException) {
             return null
+        } catch (e: Exception) {
+            throw e
         }
     }
 
-    suspend fun findByUsername(username: String): UserResponse? {
+
+
+    suspend fun createUser(userRequest: UserRequest): UserResponse? {
         try {
-            val response = api.getUserByUsername(username)
 
+            val response = apiService.createUser(userRequest)
             if (response.isSuccessful) {
-                val responseBody = response.body()
+                val createdUser = response.body()
+                createdUser?.let {
+                    userDao.insertUser(it.toUserEntity())
 
-                return responseBody
+                }
+                return createdUser
             } else {
                 val errorBody = response.errorBody()?.string()
-                return null
+                throw HttpException(response)
             }
         } catch (e: Exception) {
-
-            return null
+            throw e
         }
     }
-
-    suspend fun createUser(user: UserRequest): UserResponse? {
-        try {
-            val response = api.createUser(user)
-
-            if (response.isSuccessful) {
-                return response.body()
-            } else {
-                val errorBody = response.errorBody()?.string()
-                return null
-            }
-        } catch (e: Exception) {
-            return null
-        }
-    }
-
 }

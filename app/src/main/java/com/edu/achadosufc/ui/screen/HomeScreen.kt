@@ -1,141 +1,134 @@
 package com.edu.achadosufc.ui.screen
 
-import com.edu.achadosufc.viewModel.HomeViewModel
-import androidx.compose.foundation.layout.*
+
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.semantics.traversalIndex
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import androidx.navigation.compose.currentBackStackEntryAsState
+import com.edu.achadosufc.ui.components.AppBottomBar
 import com.edu.achadosufc.ui.components.AppTopBar
 import com.edu.achadosufc.ui.components.ItemCard
+import com.edu.achadosufc.viewModel.HomeViewModel
 import com.edu.achadosufc.viewModel.ItemViewModel
+import com.edu.achadosufc.viewModel.LoginViewModel
+import com.edu.achadosufc.viewModel.ThemeViewModel
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
-    isDarkTheme: Boolean,
     navController: NavController,
     homeViewModel: HomeViewModel,
     itemViewModel: ItemViewModel,
-    onToggleTheme: () -> Unit
+    themeViewModel: ThemeViewModel,
+    loginViewModel: LoginViewModel
 ) {
     val allItems by homeViewModel.items.collectAsState()
-    LaunchedEffect(Unit) {
-        homeViewModel.getItems()
+    val isLoading by homeViewModel.isLoading.collectAsState()
+    var isRefreshing by remember { mutableStateOf(false) }
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = navBackStackEntry?.destination?.route
+    val refreshAction: () -> Unit = {
+        isRefreshing = true
+        homeViewModel.fetchItemsFromNetwork()
     }
-    var searchText by remember { mutableStateOf("") }
-    val filteredItems by remember(allItems, searchText) {
-        derivedStateOf {
-            if (searchText.isBlank()) {
-                allItems
-            } else {
-                allItems.filter {
-                    it.title.contains(searchText, ignoreCase = true) ||
-                            it.description.contains(searchText, ignoreCase = true) ||
-                            it.location.contains(searchText, ignoreCase = true)
-                }
-            }
+    val loggedUser by loginViewModel.loggedUser.collectAsState()
+
+
+    LaunchedEffect(isLoading) {
+        if (!isLoading && isRefreshing) {
+            isRefreshing = false
         }
     }
+
+
+    LaunchedEffect(Unit) {
+        if (allItems.isEmpty()) {
+            homeViewModel.fetchItemsFromNetwork()
+        }
+    }
+
 
     Scaffold(
         topBar = {
             AppTopBar(
                 title = "Achados e Perdidos",
-                isDarkTheme = isDarkTheme,
-                onToggleTheme = onToggleTheme
+                themeViewModel = themeViewModel,
             )
         },
+        bottomBar = {
+            AppBottomBar(
+                navController = navController,
+                currentRoute = currentRoute,
+                loggedUser = loggedUser
+            )
 
-        bottomBar = @Composable {
-            NavigationBar {
-                NavigationBarItem(
-                    icon = { Icon(Icons.Default.Home, contentDescription = "Início") },
-                    label = { Text("Início") },
-                    selected = true,
-                    onClick = {}
-                )
-                NavigationBarItem(
-                    icon = { Icon(Icons.Default.Add, contentDescription = "Publicar") },
-                    label = { Text("Publicar") },
-                    selected = false,
-                    onClick = {
-                        navController.navigate(Screen.ReportItem.route)
-                    }
-                )
-                NavigationBarItem(
-                    icon = { Icon(Icons.Default.Person, contentDescription = "Perfil") },
-                    label = { Text("Perfil") },
-                    selected = false,
-                    onClick = {
-                        navController.navigate(Screen.Profile.route)
-                    }
-                )
-            }
         },
-    ) { padding ->
+    ) { paddingValues ->
         Column(
             modifier = Modifier
-                .padding(padding)
+                .padding(paddingValues)
                 .fillMaxSize()
         ) {
-            val onActiveChange = { }
-            val colors1 = SearchBarDefaults.colors()
-            SearchBar(
-                inputField = {
-                    SearchBarDefaults.InputField(
-                        query = searchText,
-                        onQueryChange = { searchText = it },
-                        onSearch = { },
-                        expanded = false,
-                        onExpandedChange = { onActiveChange },
-                        enabled = true,
-                        placeholder = { Text("Buscar") },
-                        leadingIcon = {
-                            Icon(
-                                Icons.Filled.Search,
-                                contentDescription = "Ícone de busca"
-                            )
-                        },
-                        trailingIcon = null,
-                        interactionSource = null,
-                    )
-                },
-                expanded = false,
-                onExpandedChange = { onActiveChange },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp)
-                    .semantics { traversalIndex = 0f },
-                shape = SearchBarDefaults.inputFieldShape,
-                colors = colors1,
-                tonalElevation = SearchBarDefaults.TonalElevation,
-                shadowElevation = SearchBarDefaults.ShadowElevation,
-                windowInsets = SearchBarDefaults.windowInsets,
-                content = {},
-            )
-            LazyColumn(
-                contentPadding = PaddingValues(horizontal = 16.dp)
+
+
+            PullToRefreshBox(
+                isRefreshing = isRefreshing,
+                onRefresh = refreshAction,
+                modifier = Modifier.fillMaxSize(),
             ) {
-                items(filteredItems) { item ->
-                    ItemCard(item = item, navController, itemViewModel)
-                }
-                if (filteredItems.isEmpty() && searchText.isNotBlank()) {
-                    item {
-                        Text(
-                            "Nenhum item encontrado para \"${searchText}\"",
-                            modifier = Modifier.padding(16.dp)
-                        )
+                if (isLoading && allItems.isEmpty() && !isRefreshing) {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(modifier = Modifier.size(48.dp))
+                    }
+                } else {
+                    LazyColumn(
+                        contentPadding = PaddingValues(horizontal = 0.dp, vertical = 0.dp),
+                        verticalArrangement = Arrangement.spacedBy(0.dp)
+                    ) {
+                        items(allItems) { item ->
+                            ItemCard(item = item, navController, itemViewModel)
+                        }
+
+
+                        if (allItems.isEmpty() && !isLoading) {
+                            item {
+                                Text(
+                                    "Nenhum item disponível no momento.",
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(16.dp),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+
+
                     }
                 }
             }

@@ -6,12 +6,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.edu.achadosufc.data.model.UserRequest
 import com.edu.achadosufc.data.repository.FileRepository
-import com.edu.achadosufc.data.repository.UserPreferencesRepository
 import com.edu.achadosufc.data.repository.UserRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
@@ -21,8 +18,8 @@ import java.io.File
 class SignUpViewModel(
     private val uploadRepository: FileRepository,
     private val userRepository: UserRepository,
-    private val userPreferencesRepository: UserPreferencesRepository,
-    private val applicationContext: Context
+    private val applicationContext: Context,
+    private val loginViewModel: LoginViewModel
 ) : ViewModel() {
 
     private val _username = MutableStateFlow("")
@@ -58,39 +55,8 @@ class SignUpViewModel(
     private val _signUpSuccess = MutableStateFlow(false)
     val signUpSuccess: StateFlow<Boolean> = _signUpSuccess
 
-    private val _keepLoggedIn = MutableStateFlow(false)
-    val keepLoggedIn: StateFlow<Boolean> = _keepLoggedIn
+    private val keepLoggedIn = loginViewModel.keepLoggedIn
 
-    init {
-        viewModelScope.launch {
-            val initialKeepLoggedIn = userPreferencesRepository.keepLoggedIn.first()
-            val initialUserId = userPreferencesRepository.userId.firstOrNull()
-
-            _keepLoggedIn.value = initialKeepLoggedIn
-
-            if (initialKeepLoggedIn && initialUserId != null) {
-                _loading.value = true
-                try {
-                    val user = userRepository.findById(initialUserId)
-                    if (user != null) {
-
-                    } else {
-                        _error.value = "Sessão expirada ou usuário inválido. Faça login novamente."
-                        userPreferencesRepository.clearUserId()
-                        userPreferencesRepository.updateKeepLoggedIn(false)
-                    }
-                } catch (e: Exception) {
-                    _error.value = "Erro ao tentar login automático: ${e.message}"
-                    userPreferencesRepository.clearUserId()
-                    userPreferencesRepository.updateKeepLoggedIn(false)
-                } finally {
-                    _loading.value = false
-                }
-            } else if (initialKeepLoggedIn && initialUserId == null) {
-                userPreferencesRepository.updateKeepLoggedIn(false)
-            }
-        }
-    }
 
     fun onImageSelected(uri: Uri?) {
         _selectedImageUri.value = uri
@@ -129,6 +95,7 @@ class SignUpViewModel(
         _phone.value = value; _error.value = null
     }
 
+
     private fun prepareFilePart(fileUri: Uri): MultipartBody.Part? {
         val contentResolver = applicationContext.contentResolver
         val inputStream = contentResolver.openInputStream(fileUri)
@@ -138,9 +105,19 @@ class SignUpViewModel(
             return null
         }
 
-        val file =
-            File(applicationContext.cacheDir, "upload_temp_file_${System.currentTimeMillis()}")
+
+        val fileName = contentResolver.query(fileUri, null, null, null, null)?.use { cursor ->
+            val nameIndex = cursor.getColumnIndex("_display_name")
+            if (nameIndex != -1 && cursor.moveToFirst()) {
+                cursor.getString(nameIndex)
+            } else {
+                null
+            }
+        } ?: "upload_temp_file_${System.currentTimeMillis()}.jpg"
+
+        val file = File(applicationContext.cacheDir, fileName)
         file.createNewFile()
+
         file.outputStream().use { output ->
             inputStream.copyTo(output)
         }
@@ -149,11 +126,12 @@ class SignUpViewModel(
         val mimeType = contentResolver.getType(fileUri) ?: "image/*"
         val requestFile = file.asRequestBody(mimeType.toMediaTypeOrNull())
 
-        return MultipartBody.Part.createFormData("file", file.name, requestFile)
+
+        return MultipartBody.Part.createFormData("file", fileName, requestFile)
     }
 
-    fun signUp() {
 
+    fun signUp() {
         if (_username.value.isBlank() || _name.value.isBlank() ||
             _email.value.isBlank() || _password.value.isBlank() ||
             _confirmPassword.value.isBlank()
@@ -207,8 +185,16 @@ class SignUpViewModel(
                     imageUrl = finalImageUrl
                 )
 
-                val registerResponse = userRepository.createUser(userRequest)
-                _signUpSuccess.value = true
+                val registeredUser = userRepository.createUser(userRequest)
+                if (registeredUser != null) {
+                    _signUpSuccess.value = true
+                    if (keepLoggedIn.value) {
+                        loginViewModel.saveUserIdOnSession(registeredUser.id)
+                        loginViewModel.updateKeepLoggedInOnSession(true)
+                    }
+                } else {
+                    _error.value = "Falha no cadastro: Resposta do servidor vazia."
+                }
 
             } catch (e: Exception) {
                 _error.value = "Erro ao cadastrar: ${e.message ?: "Ocorreu um erro desconhecido."}"
@@ -220,5 +206,12 @@ class SignUpViewModel(
 
     fun resetSignUpSuccess() {
         _signUpSuccess.value = false
+    }
+
+    fun updateKeepLoggedInPreference(value: Boolean) {
+        viewModelScope.launch {
+
+            loginViewModel.updateKeepLoggedInOnSession(value)
+        }
     }
 }

@@ -1,9 +1,12 @@
 package com.edu.achadosufc.viewModel
 
 import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.edu.achadosufc.data.SessionManager
 import com.edu.achadosufc.data.model.ItemRequest
 import com.edu.achadosufc.data.repository.FileRepository
 import com.edu.achadosufc.data.repository.ItemRepository
@@ -14,13 +17,14 @@ import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.asRequestBody
 import java.io.File
+import java.io.InputStream
 
 class ReportViewModel(
     private val itemRepository: ItemRepository,
-    private val fileRepository: FileRepository,
     private val applicationContext: Context
 ) : ViewModel() {
 
+    private val sessionManager = SessionManager(applicationContext)
     private val _isLoading = MutableStateFlow(false)
     val isLoading = _isLoading.asStateFlow()
 
@@ -42,28 +46,16 @@ class ReportViewModel(
             _error.value = null
 
             try {
-                if (imageUri != null) {
-                    val filePart = prepareFilePart(imageUri)
-                    if (filePart != null) {
-                        fileRepository.uploadFile(filePart)
-                    }
-
-                }
-            } catch (e: Exception) {
-                _error.value = "Erro ao enviar imagem: ${e.message}"
-                _isLoading.value = false
-                return@launch
-            }
-
-            try {
-                itemRepository.create(
-                    ItemRequest(
+                imageUri?.let { prepareResizedFilePart(it) }?.let {
+                    itemRepository.create(
                         title = title,
                         description = description,
                         location = location,
+                        file = it,
                         isFound = isLost,
+                        token = ("Bearer " + sessionManager.fetchAuthToken()) ?: ""
                     )
-                )
+                }
                 _success.value = true
 
             } catch (e: Exception) {
@@ -83,26 +75,61 @@ class ReportViewModel(
         _error.value = null
     }
 
-    private fun prepareFilePart(fileUri: Uri): MultipartBody.Part? {
-        val contentResolver = applicationContext.contentResolver
-        val inputStream = contentResolver.openInputStream(fileUri)
+    private fun prepareResizedFilePart(imageUri: Uri): MultipartBody.Part {
 
-        if (inputStream == null) {
-            _error.value = "Não foi possível ler o arquivo de imagem."
-            return null
+        val resizedBitmap = decodeSampledBitmapFromUri(applicationContext, imageUri, 1080, 1080)
+            ?: throw Exception("Não foi possível processar a imagem.")
+
+
+        val imageFile = convertBitmapToFile(applicationContext, resizedBitmap)
+
+
+        val mimeType = applicationContext.contentResolver.getType(imageUri) ?: "image/jpeg"
+        val requestFile = imageFile.asRequestBody(mimeType.toMediaTypeOrNull())
+
+
+        return MultipartBody.Part.createFormData("file", imageFile.name, requestFile)
+    }
+
+
+    private fun convertBitmapToFile(context: Context, bitmap: Bitmap): File {
+        val tempFile = File(context.cacheDir, "temp_image_${System.currentTimeMillis()}.jpeg")
+        tempFile.outputStream().use { out ->
+
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 85, out)
         }
+        return tempFile
+    }
 
-        val file =
-            File(applicationContext.cacheDir, "upload_temp_file_${System.currentTimeMillis()}")
-        file.createNewFile()
-        file.outputStream().use { output ->
-            inputStream.copyTo(output)
+
+    private fun decodeSampledBitmapFromUri(context: Context, uri: Uri, reqWidth: Int, reqHeight: Int): Bitmap? {
+        val inputStream: InputStream? = context.contentResolver.openInputStream(uri)
+        return BitmapFactory.Options().run {
+            inJustDecodeBounds = true
+            BitmapFactory.decodeStream(inputStream, null, this)
+            inputStream?.close()
+
+            inSampleSize = calculateInSampleSize(this, reqWidth, reqHeight)
+
+            inJustDecodeBounds = false
+            val newInputStream: InputStream? = context.contentResolver.openInputStream(uri)
+            val bitmap = BitmapFactory.decodeStream(newInputStream, null, this)
+            newInputStream?.close()
+            bitmap
         }
-        inputStream.close()
+    }
 
-        val mimeType = contentResolver.getType(fileUri) ?: "image/*"
-        val requestFile = file.asRequestBody(mimeType.toMediaTypeOrNull())
 
-        return MultipartBody.Part.createFormData("file", file.name, requestFile)
+    private fun calculateInSampleSize(options: BitmapFactory.Options, reqWidth: Int, reqHeight: Int): Int {
+        val (height: Int, width: Int) = options.run { outHeight to outWidth }
+        var inSampleSize = 1
+        if (height > reqHeight || width > reqWidth) {
+            val halfHeight: Int = height / 2
+            val halfWidth: Int = width / 2
+            while (halfHeight / inSampleSize >= reqHeight && halfWidth / inSampleSize >= reqWidth) {
+                inSampleSize *= 2
+            }
+        }
+        return inSampleSize
     }
 }

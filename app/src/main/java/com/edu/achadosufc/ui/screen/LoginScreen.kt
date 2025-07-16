@@ -34,11 +34,12 @@ fun LoginScreen(
     navController: NavController,
     loginViewModel: LoginViewModel
 ) {
+
     val email by loginViewModel.email.collectAsStateWithLifecycle()
     val password by loginViewModel.password.collectAsStateWithLifecycle()
     val loading by loginViewModel.loading.collectAsStateWithLifecycle()
     val error by loginViewModel.error.collectAsStateWithLifecycle()
-
+    val confirmButtonAction by loginViewModel.confirmButtonAction.collectAsStateWithLifecycle()
     var passwordVisible by remember { mutableStateOf(false) }
     val user by loginViewModel.loggedUser.collectAsStateWithLifecycle()
     val keepLoggedIn by loginViewModel.keepLoggedIn.collectAsStateWithLifecycle()
@@ -46,7 +47,6 @@ fun LoginScreen(
     LaunchedEffect(user) {
         user?.let {
             navController.navigate(Screen.Home.createRoute(it.id)) {
-
                 popUpTo(Screen.Login.route) {
                     inclusive = true
                 }
@@ -54,7 +54,6 @@ fun LoginScreen(
             }
         }
     }
-
     Box(
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
@@ -84,7 +83,7 @@ fun LoginScreen(
             ) {
 
                 Image(
-                    painter = painterResource(id = R.drawable.brasao),
+                    painter = painterResource(id = R.drawable.brasao_vertical_cor),
                     contentDescription = "Brasão UFC",
                     modifier = Modifier
                         .height(80.dp)
@@ -105,7 +104,6 @@ fun LoginScreen(
                     ),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email)
                 )
-
                 OutlinedTextField(
                     value = password,
                     onValueChange = { loginViewModel.onPasswordChanged(it) },
@@ -115,13 +113,15 @@ fun LoginScreen(
                         val image = if (passwordVisible)
                             Icons.Filled.Visibility
                         else Icons.Filled.VisibilityOff
-
                         val description = if (passwordVisible) "Ocultar senha" else "Mostrar senha"
+
 
                         IconButton(onClick = { passwordVisible = !passwordVisible }) {
                             Icon(imageVector = image, description, tint = Color(0xFFE3E3E3))
                         }
+
                     },
+
                     singleLine = true,
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = Color(0xFFE3E3E3),
@@ -130,40 +130,23 @@ fun LoginScreen(
                         unfocusedTextColor = Color(0xFFE3E3E3),
                         cursorColor = Color(0xFFE3E3E3)
                     ),
+
                     modifier = Modifier.fillMaxWidth(),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done)
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Password,
+                        imeAction = ImeAction.Done
+                    )
                 )
+
+
 
                 if (!error.isNullOrEmpty()) {
                     MessageDialog(
                         title = "Erro",
                         message = error ?: "",
                         confirmButtonText = "OK",
-                        confirmButtonAction = { loginViewModel.clearErrorMessage() }
+                        confirmButtonAction = { confirmButtonAction?.let { it() } }
                     )
-                }
-
-
-                Button(
-                    onClick = {
-                        loginViewModel.login()
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                    enabled = !loading,
-
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFFE3E3E3),
-                        contentColor = Color.Black
-                    )
-                ) {
-                    if (loading) {
-                        CircularProgressIndicator(
-                            color = Color.White,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    } else {
-                        Text("Entrar")
-                    }
                 }
                 Row(
                     modifier = Modifier
@@ -172,8 +155,8 @@ fun LoginScreen(
                         },
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.Center,
-
                     ) {
+
                     Checkbox(
                         checked = keepLoggedIn,
                         onCheckedChange = {
@@ -188,6 +171,7 @@ fun LoginScreen(
                             checkmarkColor = Color.Black
                         )
                     )
+
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         "Mantenha-me conectado(a)",
@@ -195,13 +179,30 @@ fun LoginScreen(
                         style = MaterialTheme.typography.labelSmall,
                         modifier = Modifier.clickable {
                             loginViewModel.updateKeepLoggedInPreference(!loginViewModel.keepLoggedIn.value)
-
                         }
                     )
                 }
-
+                Button(
+                    onClick = {
+                        loginViewModel.login()
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = (email.isNotBlank() && password.isNotBlank()) && !loading,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFFE3E3E3),
+                        contentColor = Color.Black
+                    )
+                ) {
+                    if (loading) {
+                        CircularProgressIndicator(
+                            color = Color.White,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    } else {
+                        Text("Entrar")
+                    }
+                }
                 Spacer(modifier = Modifier.height(16.dp))
-
                 Text(
                     text = "Criar conta",
                     color = Color(0xFFE3E3E3),

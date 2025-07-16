@@ -8,18 +8,12 @@ import com.edu.achadosufc.data.service.AuthService
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
-class LoginRepository(context: Context) {
+class LoginRepository(
+    context: Context,
     private val api: AuthService
+) {
     private val sessionManager: SessionManager = SessionManager(context)
 
-    init {
-        val retrofit = Retrofit.Builder()
-            .baseUrl("https://achados-ufc-api-hch7.vercel.app/")
-            .addConverterFactory(GsonConverterFactory.create())
-            .build()
-
-        api = retrofit.create(AuthService::class.java)
-    }
 
     suspend fun login(
         username: String,
