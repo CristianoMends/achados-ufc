@@ -3,7 +3,6 @@ package com.edu.achadosufc
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
-import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -17,7 +16,7 @@ import com.edu.achadosufc.data.dao.AppDatabase
 import com.edu.achadosufc.data.repository.FileRepository
 import com.edu.achadosufc.data.repository.ItemRepository
 import com.edu.achadosufc.data.repository.LoginRepository
-import com.edu.achadosufc.data.repository.UserPreferencesRepository
+import com.edu.achadosufc.data.UserPreferences
 import com.edu.achadosufc.data.repository.UserRepository
 import com.edu.achadosufc.data.service.AuthService
 import com.edu.achadosufc.data.service.FileService
@@ -60,8 +59,8 @@ class MainActivity : ComponentActivity() {
 
             val userRepository: UserRepository = UserRepository(userService, appDatabase.userDao())
             val loginRepository: LoginRepository = LoginRepository(this, api = authService)
-            val userPreferencesRepository: UserPreferencesRepository =
-                UserPreferencesRepository(this)
+            val userPreferencesRepository: UserPreferences =
+                UserPreferences(this)
             val themeViewModel: ThemeViewModel by viewModels {
                 ThemeViewModelFactory(userPreferencesRepository)
             }

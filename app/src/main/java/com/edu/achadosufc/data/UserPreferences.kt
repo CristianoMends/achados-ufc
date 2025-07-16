@@ -1,4 +1,4 @@
-package com.edu.achadosufc.data.repository
+package com.edu.achadosufc.data
 
 import android.content.Context
 import androidx.datastore.core.DataStore
@@ -14,7 +14,7 @@ import kotlinx.coroutines.flow.map
 
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "user_preferences")
 
-class UserPreferencesRepository(private val context: Context) {
+class UserPreferences(private val context: Context) {
     private val THEME_MODE_KEY = stringPreferencesKey("theme_mode")
 
     val themeMode: Flow<ThemeMode> = context.dataStore.data.map { preferences ->

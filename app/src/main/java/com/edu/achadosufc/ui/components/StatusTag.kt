@@ -13,7 +13,7 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun StatusTag(isFound: Boolean) {
     Text(
-        text = if (isFound) "Encontrado" else "Perdido",
+        text = if (isFound) "Achado" else "Perdido",
         color = Color.White,
         modifier = Modifier
             .background(

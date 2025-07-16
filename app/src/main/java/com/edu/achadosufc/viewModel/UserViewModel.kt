@@ -8,7 +8,7 @@ import com.edu.achadosufc.data.SessionManager
 import com.edu.achadosufc.data.model.Item
 import com.edu.achadosufc.data.model.UserResponse
 import com.edu.achadosufc.data.repository.ItemRepository
-import com.edu.achadosufc.data.repository.UserPreferencesRepository
+import com.edu.achadosufc.data.UserPreferences
 import com.edu.achadosufc.data.repository.UserRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -20,7 +20,7 @@ import java.net.UnknownHostException
 class UserViewModel(
     private val userRepository: UserRepository,
     private val itemRepository: ItemRepository,
-    private val userPreferencesRepository: UserPreferencesRepository,
+    private val userPreferencesRepository: UserPreferences,
     context: Context
 ) : ViewModel() {
 
@@ -47,6 +47,8 @@ class UserViewModel(
     }
 
     init {
+        _selectedUser.value = null
+        _isLoading.value = true
         viewModelScope.launch {
             userPreferencesRepository.userId.collectLatest { loggedUserId ->
                 if (loggedUserId != null && loggedUserId != -1) {
@@ -56,21 +58,25 @@ class UserViewModel(
                                 "Erro ao carregar usuário logado do DB local: ${e.message}"
                             Log.e("UserViewModel", "Erro ao ler usuário logado do DB local", e)
                             _loggedUser.value = null
+                            _isLoading.value = false
                         }
                         .collectLatest { userFromDb ->
                             _loggedUser.value = userFromDb
                             if (userFromDb == null) {
                                 refreshLoggedInUser(loggedUserId)
+                                _isLoading.value = false
                             }
                         }
                 } else {
                     _loggedUser.value = null
+                    _isLoading.value = false
                 }
             }
         }
 
 
         viewModelScope.launch {
+            _isLoading.value = true
             _selectedUser.collectLatest { user ->
                 user?.id?.let { userIdInt ->
 
@@ -84,6 +90,7 @@ class UserViewModel(
                                 e
                             )
                             _userItems.value = emptyList()
+                            _isLoading.value = false
                         }
                         .collectLatest { fetchedItems ->
                             _userItems.value = fetchedItems
@@ -92,6 +99,7 @@ class UserViewModel(
 
                             if (fetchedItems.isEmpty() && !_isLoading.value) {
                                 refreshUserItems(userIdInt)
+                                _isLoading.value = true
                             }
                         }
                 }
@@ -126,18 +134,19 @@ class UserViewModel(
 
         viewModelScope.launch {
 
+            try {
+                userRepository.fetchUserByIdAndSave(userId)
+            } catch (e: Exception) {
+            }
+
             userRepository.getUserByIdLocal(userId)
                 .catch { e ->
                     _errorMessage.value =
                         "Erro ao carregar detalhes do usuário do DB local: ${e.message}"
-                    Log.e("UserViewModel", "Erro ao ler DB local para usuário $userId", e)
                     _selectedUser.value = null
                 }
                 .collectLatest { userFromDb ->
                     _selectedUser.value = userFromDb
-
-                    refreshUserDetailFromNetwork(userId)
-
                 }
         }
     }
@@ -147,14 +156,11 @@ class UserViewModel(
             try {
 
                 userRepository.fetchUserByIdAndSave(userId)
-                Log.d("UserViewModel", "Detalhes do usuário $userId sincronizados da rede.")
             } catch (e: UnknownHostException) {
                 _errorMessage.value =
                     "Sem conexão para atualizar detalhes do usuário. Exibindo dados locais."
-                Log.w("UserViewModel", "Sem conexão para atualizar detalhes do usuário $userId", e)
             } catch (e: Exception) {
                 _errorMessage.value = "Erro ao sincronizar detalhes do usuário: ${e.message}"
-                Log.e("UserViewModel", "Erro ao sincronizar detalhes do usuário $userId", e)
             } finally {
                 _isLoading.value = false
             }

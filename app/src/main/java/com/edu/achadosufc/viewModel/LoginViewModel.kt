@@ -7,20 +7,19 @@ import androidx.lifecycle.viewModelScope
 import com.edu.achadosufc.data.SessionManager
 import com.edu.achadosufc.data.model.UserResponse
 import com.edu.achadosufc.data.repository.LoginRepository
-import com.edu.achadosufc.data.repository.UserPreferencesRepository
+import com.edu.achadosufc.data.UserPreferences
 import com.edu.achadosufc.data.repository.UserRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
 class LoginViewModel(
 
     private val userRepository: UserRepository,
     private val loginRepository: LoginRepository,
-    private val userPreferencesRepository: UserPreferencesRepository,
+    private val userPreferencesRepository: UserPreferences,
     context: Context
 ) : ViewModel() {
 

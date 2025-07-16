@@ -18,6 +18,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.vector.ImageVector
 import com.edu.achadosufc.ui.theme.ThemeMode
 import com.edu.achadosufc.viewModel.ThemeViewModel
 
@@ -28,6 +29,9 @@ fun AppTopBar(
     themeViewModel: ThemeViewModel,
     showBackButton: Boolean = false,
     onBackClick: (() -> Unit)? = null,
+    actionIcon: ImageVector? = null,
+    actionIconContentDescription: String? = null,
+    onActionClick: (() -> Unit)? = null
 ) {
     TopAppBar(
         title = { Text(title) },
@@ -38,8 +42,16 @@ fun AppTopBar(
                 }
             }
         },
-
         actions = {
+            if (actionIcon != null && onActionClick != null) {
+                IconButton(onClick = onActionClick) {
+                    Icon(
+                        imageVector = actionIcon,
+                        contentDescription = actionIconContentDescription
+                    )
+                }
+            }
+
             ThemeSelector(themeViewModel = themeViewModel)
         }
     )
@@ -51,11 +63,9 @@ private fun ThemeSelector(themeViewModel: ThemeViewModel) {
     val currentTheme by themeViewModel.themeMode.collectAsState()
 
     Box {
-
         IconButton(onClick = { expanded = true }) {
             Icon(Icons.Default.MoreVert, contentDescription = "Opções de tema")
         }
-
 
         DropdownMenu(
             expanded = expanded,
@@ -67,7 +77,6 @@ private fun ThemeSelector(themeViewModel: ThemeViewModel) {
                     themeViewModel.setThemeMode(ThemeMode.LIGHT)
                     expanded = false
                 },
-
                 leadingIcon = if (currentTheme == ThemeMode.LIGHT) {
                     { Icon(Icons.Filled.Check, contentDescription = "Tema atual") }
                 } else null
@@ -78,7 +87,6 @@ private fun ThemeSelector(themeViewModel: ThemeViewModel) {
                     themeViewModel.setThemeMode(ThemeMode.DARK)
                     expanded = false
                 },
-
                 leadingIcon = if (currentTheme == ThemeMode.DARK) {
                     { Icon(Icons.Filled.Check, contentDescription = "Tema atual") }
                 } else null
@@ -89,7 +97,6 @@ private fun ThemeSelector(themeViewModel: ThemeViewModel) {
                     themeViewModel.setThemeMode(ThemeMode.SYSTEM)
                     expanded = false
                 },
-
                 leadingIcon = if (currentTheme == ThemeMode.SYSTEM) {
                     { Icon(Icons.Filled.Check, contentDescription = "Tema atual") }
                 } else null
