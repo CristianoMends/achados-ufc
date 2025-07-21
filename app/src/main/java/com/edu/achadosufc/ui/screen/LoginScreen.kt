@@ -42,7 +42,6 @@ fun LoginScreen(
     val confirmButtonAction by loginViewModel.confirmButtonAction.collectAsStateWithLifecycle()
     var passwordVisible by remember { mutableStateOf(false) }
     val user by loginViewModel.loggedUser.collectAsStateWithLifecycle()
-    val keepLoggedIn by loginViewModel.keepLoggedIn.collectAsStateWithLifecycle()
 
     LaunchedEffect(user) {
         user?.let {
@@ -147,40 +146,9 @@ fun LoginScreen(
                         confirmButtonText = "OK",
                         confirmButtonAction = { confirmButtonAction?.let { it() } }
                     )
-                }
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable {
-                        },
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center,
-                    ) {
 
-                    Checkbox(
-                        checked = keepLoggedIn,
-                        onCheckedChange = {
-                            loginViewModel.updateKeepLoggedInPreference(!loginViewModel.keepLoggedIn.value)
-                        },
-                        modifier = Modifier
-                            .size(5.dp)
-                            .scale(0.5f),
-                        colors = CheckboxDefaults.colors(
-                            checkedColor = Color(0xFFE3E3E3),
-                            uncheckedColor = Color(0xFFE3E3E3),
-                            checkmarkColor = Color.Black
-                        )
-                    )
 
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        "Mantenha-me conectado(a)",
-                        color = Color(0xFFE3E3E3),
-                        style = MaterialTheme.typography.labelSmall,
-                        modifier = Modifier.clickable {
-                            loginViewModel.updateKeepLoggedInPreference(!loginViewModel.keepLoggedIn.value)
-                        }
-                    )
                 }
                 Button(
                     onClick = {

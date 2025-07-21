@@ -3,7 +3,6 @@ package com.edu.achadosufc.data
 import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
-import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
@@ -30,25 +29,14 @@ class UserPreferences(private val context: Context) {
     }
 
     private object PreferencesKeys {
-        val KEEP_LOGGED_IN = booleanPreferencesKey("keep_logged_in")
         val USER_ID = intPreferencesKey("user_id")
     }
 
-    val keepLoggedIn: Flow<Boolean> = context.dataStore.data
-        .map { preferences ->
-            preferences[PreferencesKeys.KEEP_LOGGED_IN] ?: false
-        }
 
     val userId: Flow<Int?> = context.dataStore.data
         .map { preferences ->
             preferences[PreferencesKeys.USER_ID]
         }
-
-    suspend fun updateKeepLoggedIn(value: Boolean) {
-        context.dataStore.edit { preferences ->
-            preferences[PreferencesKeys.KEEP_LOGGED_IN] = value
-        }
-    }
 
     suspend fun saveUserId(userId: Int) {
         context.dataStore.edit { preferences ->

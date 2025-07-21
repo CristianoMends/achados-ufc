@@ -90,17 +90,29 @@ fun UserDetailScreen(
             } else if (user != null) {
                 LazyVerticalGrid(
                     columns = GridCells.Fixed(3),
-                    modifier = Modifier.padding(padding).fillMaxSize(),
+                    modifier = Modifier
+                        .padding(padding)
+                        .fillMaxSize(),
                     contentPadding = PaddingValues(top = 16.dp),
                     horizontalArrangement = Arrangement.spacedBy(4.dp),
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     item(span = { GridItemSpan(maxLineSpan) }) {
-                        UserDetailHeader(
-                            user = user!!,
-                            postCount = userItems.size,
-                            onSendMessageClick = { /* TODO: Implementar lógica de chat */ }
-                        )
+                        user?.let { currentUser ->
+                            UserDetailHeader(
+                                user = user!!,
+                                postCount = userItems.size,
+                                onSendMessageClick = {
+                                    navController.navigate(
+                                        Screen.Chat.createRoute(
+                                            recipientId = currentUser.id,
+                                            recipientUsername = currentUser.username,
+                                            photoUrl = currentUser.imageUrl
+                                        )
+                                    )
+                                }
+                            )
+                        }
                     }
 
                     if (userItems.isNotEmpty()) {
@@ -115,7 +127,9 @@ fun UserDetailScreen(
                                 text = "Este usuário ainda não tem publicações.",
                                 style = MaterialTheme.typography.bodyLarge,
                                 textAlign = TextAlign.Center,
-                                modifier = Modifier.fillMaxWidth().padding(vertical = 48.dp)
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 48.dp)
                             )
                         }
                     }

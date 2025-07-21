@@ -42,11 +42,14 @@ android {
 }
 
 dependencies {
+    implementation("io.socket:socket.io-client:2.1.0")
+
     implementation ("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
     implementation ("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
 
 
     implementation ("androidx.room:room-runtime:2.6.1")
+    implementation(libs.firebase.firestore.ktx)
     ksp("androidx.room:room-compiler:2.6.1")
     implementation ("androidx.room:room-ktx:2.6.1")
 

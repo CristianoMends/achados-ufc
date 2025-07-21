@@ -1,5 +1,6 @@
 package com.edu.achadosufc
 
+import ChatSocketService
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
@@ -10,6 +11,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.rememberNavController
 import com.edu.achadosufc.data.dao.AppDatabase
@@ -24,6 +26,7 @@ import com.edu.achadosufc.data.service.ItemService
 import com.edu.achadosufc.data.service.UserService
 import com.edu.achadosufc.navigation.AppNavHost
 import com.edu.achadosufc.ui.theme.AchadosUFCTheme
+import com.edu.achadosufc.viewModel.ChatViewModel
 import com.edu.achadosufc.viewModel.HomeViewModel
 import com.edu.achadosufc.viewModel.ItemViewModel
 import com.edu.achadosufc.viewModel.LoginViewModel
@@ -46,28 +49,30 @@ class MainActivity : ComponentActivity() {
 
             val appDatabase = AppDatabase.getDatabase(this)
 
+            val chatService = ChatSocketService(this)
+
             val retrofit = Retrofit.Builder()
-                .baseUrl("https://achados-ufc-api-hch7.vercel.app/")
+                .baseUrl("http://192.168.1.109:3000/"/*"https://achados-ufc-api-hch7.vercel.app/"*/)
                 .addConverterFactory(GsonConverterFactory.create())
                 .build()
 
+            //services-----------------------------------------------
             val userService = retrofit.create(UserService::class.java)
             val itemService = retrofit.create(ItemService::class.java)
             val authService = retrofit.create(AuthService::class.java)
             val fileService = retrofit.create(FileService::class.java)
 
+            //repositories-------------------------------------------
+            val userRepository = UserRepository(userService, appDatabase.userDao())
+            val loginRepository = LoginRepository(this, authService)
+            val userPreferencesRepository = UserPreferences(this)
+            val fileRepository = FileRepository(fileService)
+            val itemRepository = ItemRepository(itemService, appDatabase.itemDao())
 
-            val userRepository: UserRepository = UserRepository(userService, appDatabase.userDao())
-            val loginRepository: LoginRepository = LoginRepository(this, api = authService)
-            val userPreferencesRepository: UserPreferences =
-                UserPreferences(this)
+            // ViewModels--vvv-------------------------------------------
             val themeViewModel: ThemeViewModel by viewModels {
                 ThemeViewModelFactory(userPreferencesRepository)
             }
-            val fileRepository: FileRepository = FileRepository(fileService)
-            val itemRepository: ItemRepository =
-                ItemRepository(itemDao = appDatabase.itemDao(), api = itemService)
-
             val loginViewModel: LoginViewModel = viewModel() {
                 LoginViewModel(
                     loginRepository = loginRepository,
@@ -100,6 +105,13 @@ class MainActivity : ComponentActivity() {
                     applicationContext = this@MainActivity
                 )
             }
+
+            val chatViewModel: ChatViewModel = viewModel() {
+                ChatViewModel(
+                    loginViewModel = loginViewModel,
+                    chatSocketService = chatService
+                )
+            }
             val signUpViewModel: SignUpViewModel = viewModel() {
                 SignUpViewModel(
                     userRepository = userRepository,
@@ -109,6 +121,7 @@ class MainActivity : ComponentActivity() {
                 )
             }
             val themeMode by themeViewModel.themeMode.collectAsState()
+            //viewModels--^^^-------------------------------------------
 
             AchadosUFCTheme(themeMode = themeMode) {
                 AppNavHost(
@@ -119,7 +132,8 @@ class MainActivity : ComponentActivity() {
                     userViewModel = userViewModel,
                     itemViewModel = itemViewModel,
                     reportViewModel = reportViewModel,
-                    themeViewModel = themeViewModel
+                    themeViewModel = themeViewModel,
+                    chatViewModel = chatViewModel
                 )
             }
 
@@ -137,7 +151,7 @@ class MainActivity : ComponentActivity() {
 
 
         val notificationManager: NotificationManager =
-            getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            getSystemService(NOTIFICATION_SERVICE) as NotificationManager
         notificationManager.createNotificationChannel(channel)
     }
 }

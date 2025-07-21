@@ -12,6 +12,7 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
+import com.edu.achadosufc.ui.screen.ChatScreen
 import com.edu.achadosufc.ui.screen.HomeScreen
 import com.edu.achadosufc.ui.screen.ItemDetailScreen
 import com.edu.achadosufc.ui.screen.LoginScreen
@@ -22,6 +23,7 @@ import com.edu.achadosufc.ui.screen.SignUpScreen
 import com.edu.achadosufc.ui.screen.SplashScreen
 import com.edu.achadosufc.ui.screen.UserDetailScreen
 import com.edu.achadosufc.ui.screen.UserProfileScreen
+import com.edu.achadosufc.viewModel.ChatViewModel
 import com.edu.achadosufc.viewModel.HomeViewModel
 import com.edu.achadosufc.viewModel.ItemViewModel
 import com.edu.achadosufc.viewModel.LoginViewModel
@@ -39,7 +41,8 @@ fun AppNavHost(
     userViewModel: UserViewModel,
     itemViewModel: ItemViewModel,
     reportViewModel: ReportViewModel,
-    themeViewModel: ThemeViewModel
+    themeViewModel: ThemeViewModel,
+    chatViewModel: ChatViewModel
 ) {
     val isAutoLoginCheckComplete by loginViewModel.isAutoLoginCheckComplete.collectAsState()
     val loggedUser by loginViewModel.loggedUser.collectAsState()
@@ -87,6 +90,36 @@ fun AppNavHost(
                 )
             } else {
                 Text(text = "Erro: ID do item não encontrado.")
+            }
+        }
+        composable(
+            route = Screen.Chat.route,
+            arguments = listOf(
+                navArgument("recipientId") { type = NavType.IntType },
+                navArgument("recipientUsername") { type = NavType.StringType },
+                navArgument("recipientPhotoUrl") {
+                    type = NavType.StringType
+                    nullable = true
+                }
+            )
+        ) { backStackEntry ->
+            val recipientId = backStackEntry.arguments?.getInt("recipientId") ?: -1
+            val recipientUsername = backStackEntry.arguments?.getString("recipientUsername") ?: ""
+            val recipientPhotoUrl = backStackEntry.arguments?.getString("recipientPhotoUrl")
+
+
+            if (recipientId != -1 && recipientUsername.isNotEmpty()) {
+                ChatScreen(
+                    navController = navController,
+                    chatViewModel = chatViewModel,
+                    loginViewModel = loginViewModel,
+                    themeViewModel = themeViewModel,
+                    recipientId = recipientId,
+                    recipientUsername = recipientUsername,
+                    recipientPhotoUrl = recipientPhotoUrl
+                )
+            } else {
+                Text(text = "Erro: Destinatário inválido.")
             }
         }
         composable(Screen.Home.route) {

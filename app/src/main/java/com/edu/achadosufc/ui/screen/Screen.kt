@@ -23,4 +23,9 @@ sealed class Screen(val route: String) {
         fun createRoute(userId: Int) = "user_detail/$userId"
     }
 
+    data object Chat : Screen("chat/{recipientId}/{recipientUsername}?photoUrl={recipientPhotoUrl}") {
+        fun createRoute(recipientId: Int, recipientUsername: String, photoUrl: String?) =
+            "chat/$recipientId/$recipientUsername?photoUrl=${java.net.URLEncoder.encode(photoUrl ?: "", "UTF-8")}"
+    }
+
 }

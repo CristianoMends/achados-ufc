@@ -122,8 +122,8 @@ class UserViewModel(
                 userRepository.fetchUserByIdAndSave(userId)
                 Log.d("UserViewModel", "Usuário logado $userId sincronizado da rede.")
 
-            } catch (e: UnknownHostException) { /* ... */
-            } catch (e: Exception) { /* ... */
+            } catch (e: UnknownHostException) {
+            } catch (e: Exception) {
             }
         }
     }

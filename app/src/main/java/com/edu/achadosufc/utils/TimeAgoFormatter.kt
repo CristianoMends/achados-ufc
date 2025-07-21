@@ -2,6 +2,7 @@ package com.edu.achadosufc.utils
 
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
+import java.util.Date
 
 
 fun getRelativeTime(dateString: String?): String {
@@ -40,4 +41,9 @@ fun getRelativeTime(dateString: String?): String {
     } catch (e: Exception) {
         "data inválida"
     }
+}
+
+fun formatTimestampToTime(createdAt: Date): String{
+    val formatter = DateTimeFormatter.ofPattern("HH:mm")
+    return createdAt.toInstant().atZone(java.time.ZoneId.of("America/Sao_Paulo")).toLocalDateTime().format(formatter)
 }

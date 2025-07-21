@@ -1,6 +1,7 @@
 package com.edu.achadosufc.viewModel
 
 
+import android.net.ConnectivityManager
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -20,7 +21,7 @@ class LoginViewModel(
     private val userRepository: UserRepository,
     private val loginRepository: LoginRepository,
     private val userPreferencesRepository: UserPreferences,
-    context: Context
+    private val context: Context
 ) : ViewModel() {
 
 
@@ -35,8 +36,6 @@ class LoginViewModel(
     val loading: StateFlow<Boolean> = _loading
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error
-    private val _keepLoggedIn = MutableStateFlow(false)
-    val keepLoggedIn: StateFlow<Boolean> = _keepLoggedIn
     private val _confirmButtonAction = MutableStateFlow<(() -> Unit)?>(null)
     val confirmButtonAction: StateFlow<(() -> Unit)?> = _confirmButtonAction
     private val _isAutoLoginCheckComplete = MutableStateFlow(false)
@@ -45,18 +44,25 @@ class LoginViewModel(
     init {
 
         viewModelScope.launch {
-            val initialKeepLoggedIn = userPreferencesRepository.keepLoggedIn.first()
             val initialUserId = userPreferencesRepository.userId.first()
 
-            _keepLoggedIn.value = initialKeepLoggedIn
 
-            if (initialKeepLoggedIn && initialUserId != null) {
+            if (initialUserId != null) {
                 _loading.value = true
                 try {
                     val userRemote = userRepository.fetchUserByIdAndSave(userId = initialUserId)
                         ?: throw Exception("Usuário não encontrado no servidor.")
 
                     _loggedUser.value = userRemote
+
+                } catch (e: retrofit2.HttpException) {
+                    if (e.code() >= 500) {
+                        _error.value = "Servidor indisponível. Tente novamente mais tarde."
+                        _confirmButtonAction.value = { clearErrorMessage() }
+                    } else {
+                        _error.value = "Sessão inválida. Faça login novamente."
+                        _confirmButtonAction.value = { logout() }
+                    }
 
                 } catch (e: Exception) {
                     val userLocal = userRepository.getUserByIdLocal(initialUserId).first()
@@ -76,17 +82,6 @@ class LoginViewModel(
             }
         }
 
-
-        viewModelScope.launch {
-
-            userPreferencesRepository.keepLoggedIn.collect { value ->
-
-                _keepLoggedIn.value = value
-
-            }
-
-        }
-
     }
 
 
@@ -98,9 +93,7 @@ class LoginViewModel(
 
 
     fun onEmailChanged(value: String) {
-
         _email.value = value
-
         _error.value = null
 
     }
@@ -116,22 +109,10 @@ class LoginViewModel(
 
 
     fun clearLoginFields() {
-
         _email.value = ""
-
         _password.value = ""
-
         _error.value = null
 
-    }
-
-    fun updateKeepLoggedInPreference(value: Boolean) {
-        viewModelScope.launch {
-            userPreferencesRepository.updateKeepLoggedIn(value)
-            if (!value) {
-                userPreferencesRepository.clearUserId()
-            }
-        }
     }
 
     fun saveUserIdOnSession(userId: Int) {
@@ -140,14 +121,6 @@ class LoginViewModel(
         }
     }
 
-    fun updateKeepLoggedInOnSession(value: Boolean) {
-        viewModelScope.launch {
-            userPreferencesRepository.updateKeepLoggedIn(value)
-            _keepLoggedIn.value = value
-        }
-    }
-
-
     fun login() {
 
         if (_email.value.isBlank() || _password.value.isBlank()) {
@@ -155,6 +128,12 @@ class LoginViewModel(
             _confirmButtonAction.value = { clearErrorMessage() }
             return
 
+        }
+
+        if (!isInternetAvailable()) {
+            _error.value = "Sem conexão com a internet. Verifique sua conexão e tente novamente."
+            _confirmButtonAction.value = { clearErrorMessage() }
+            return
         }
 
         _loading.value = true
@@ -173,12 +152,11 @@ class LoginViewModel(
                         val expiresInMillis = 60 * 60 * 1000
                         val expirationTime = System.currentTimeMillis() + expiresInMillis
                         sessionManager.saveExpirationTime(expirationTime)
-                        if (_keepLoggedIn.value) {
-                            userPreferencesRepository.saveUserId(user.id)
 
+                        if (_loggedUser.value != null) {
+                            userPreferencesRepository.saveUserId(user.id)
                         } else {
                             userPreferencesRepository.clearUserId()
-
                         }
 
                     } else {
@@ -189,11 +167,24 @@ class LoginViewModel(
 
                 } else {
 
-                    _error.value = "Usuário ou senha inválidos"
-                    _confirmButtonAction.value = { clearLoginFields() }
-
+                    if (!isInternetAvailable()) {
+                        _error.value =
+                            "Sem conexão com a internet. Verifique sua conexão e tente novamente."
+                        _confirmButtonAction.value = { clearErrorMessage() }
+                    } else {
+                        _error.value = "Usuário ou senha inválidos"
+                        _confirmButtonAction.value = { clearLoginFields() }
+                    }
                 }
 
+            } catch (e: retrofit2.HttpException) {
+                if (e.code() >= 500) {
+                    _error.value = "Servidor indisponível. Tente novamente mais tarde."
+                    _confirmButtonAction.value = { clearErrorMessage() }
+                } else {
+                    _error.value = "Erro ao tentar fazer login: ${e.message()}"
+                    _confirmButtonAction.value = { clearErrorMessage() }
+                }
             } catch (e: Exception) {
 
                 if (e.message?.contains("failed to connect", ignoreCase = true) == true ||
@@ -232,7 +223,6 @@ class LoginViewModel(
 
 
     fun logout() {
-
         viewModelScope.launch {
             _loading.value = true
             _error.value = null
@@ -240,12 +230,16 @@ class LoginViewModel(
 
             sessionManager.clearSession()
             userPreferencesRepository.clearUserId()
-            userPreferencesRepository.updateKeepLoggedIn(false)
-            _keepLoggedIn.value = false
             _loading.value = false
             clearLoginFields()
         }
 
     }
 
+    private fun isInternetAvailable(): Boolean {
+        val connectivityManager =
+            context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        val activeNetworkInfo = connectivityManager.activeNetworkInfo
+        return activeNetworkInfo != null && activeNetworkInfo.isConnectedOrConnecting
+    }
 }

@@ -7,6 +7,7 @@ import com.edu.achadosufc.data.model.LoginResponse
 import com.edu.achadosufc.data.service.AuthService
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import java.io.IOException
 
 class LoginRepository(
     context: Context,
@@ -20,26 +21,15 @@ class LoginRepository(
         password: String,
     ): LoginResponse? {
 
-        try {
-            val response = api.login(Login(username, password))
+        val response = api.login(Login(username, password))
 
-            if (response.isSuccessful) {
-                val loginResponse = response.body()
+        val loginResponse = response.body()
 
-                if (loginResponse != null) {
-                    sessionManager.saveAuthToken(loginResponse.access_token)
-                }
-
-                return loginResponse
-            } else {
-                response.errorBody()?.string()
-
-                return null
-            }
-        } catch (e: Exception) {
-
-            return null
+        if (loginResponse != null) {
+            sessionManager.saveAuthToken(loginResponse.access_token)
         }
+
+        return loginResponse
 
     }
 }

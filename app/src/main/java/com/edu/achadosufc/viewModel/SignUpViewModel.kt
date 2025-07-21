@@ -55,8 +55,6 @@ class SignUpViewModel(
     private val _signUpSuccess = MutableStateFlow(false)
     val signUpSuccess: StateFlow<Boolean> = _signUpSuccess
 
-    private val keepLoggedIn = loginViewModel.keepLoggedIn
-
 
     fun onImageSelected(uri: Uri?) {
         _selectedImageUri.value = uri
@@ -177,8 +175,10 @@ class SignUpViewModel(
 
                 val userRequest = UserRequest(
                     username = _username.value,
-                    name = _name.value,
-                    surname = _surname.value.ifBlank { null },
+                    name = _name.value[0].uppercaseChar() + _name.value.substring(1),
+                    surname = if (_surname.value.isBlank()) null else _surname.value[0].uppercaseChar() + _surname.value.substring(
+                        1
+                    ),
                     email = _email.value,
                     password = _password.value,
                     phone = _phone.value.ifBlank { null },
@@ -188,10 +188,8 @@ class SignUpViewModel(
                 val registeredUser = userRepository.createUser(userRequest)
                 if (registeredUser != null) {
                     _signUpSuccess.value = true
-                    if (keepLoggedIn.value) {
-                        loginViewModel.saveUserIdOnSession(registeredUser.id)
-                        loginViewModel.updateKeepLoggedInOnSession(true)
-                    }
+                    loginViewModel.saveUserIdOnSession(registeredUser.id)
+
                 } else {
                     _error.value = "Falha no cadastro: Resposta do servidor vazia."
                 }
@@ -208,10 +206,4 @@ class SignUpViewModel(
         _signUpSuccess.value = false
     }
 
-    fun updateKeepLoggedInPreference(value: Boolean) {
-        viewModelScope.launch {
-
-            loginViewModel.updateKeepLoggedInOnSession(value)
-        }
-    }
 }
