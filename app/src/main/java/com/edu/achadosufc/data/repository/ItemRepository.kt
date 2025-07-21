@@ -78,6 +78,19 @@ class ItemRepository(
         }
     }
 
+    suspend fun getItemByIdFromLocalDb(itemId: Int): Item? {
+        return itemDao.getItemById(itemId)?.toItem()
+    }
+
+    suspend fun clearLocalDatabase(){
+        try {
+            itemDao.clearAllItems()
+        } catch (e: Exception) {
+            Log.e("ItemRepository", "Error clearing local database: ${e.message}")
+            throw e
+        }
+    }
+
     suspend fun fetchAndSaveItemsByUserId(userId: Int) {
         try {
             val res = this.api.getAll()
@@ -140,26 +153,22 @@ class ItemRepository(
         file: MultipartBody.Part,
         isFound: Boolean
     ) {
-        try {
-            val response = api.create(
-                token = token,
-                title = title.toRequestBody(MultipartBody.FORM),
-                description = description.toRequestBody(MultipartBody.FORM),
-                location = location.toRequestBody(MultipartBody.FORM),
-                file = file,
-                isFound = isFound
-            )
+        val response = api.create(
+            token = token,
+            title = title.toRequestBody(MultipartBody.FORM),
+            description = description.toRequestBody(MultipartBody.FORM),
+            location = location.toRequestBody(MultipartBody.FORM),
+            file = file,
+            isFound = isFound
+        )
 
-            if (response != null) {
-                if (response.isSuccessful) {
-                    response.body() ?: throw Exception("Falha ao criar o item: resposta vazia")
-                } else {
-                    val errorBody = response.errorBody()?.string()
-                    throw HttpException(response)
-                }
+        if (response != null) {
+            if (response.isSuccessful) {
+                response.body() ?: throw Exception("Falha ao criar o item: resposta vazia")
+            } else {
+                val errorBody = response.errorBody()?.string()
+                throw HttpException(response)
             }
-        } catch (e: Exception) {
-            throw e
         }
     }
 

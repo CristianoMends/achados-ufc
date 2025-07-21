@@ -66,7 +66,6 @@ fun ChatScreen(
     navController: NavController,
     chatViewModel: ChatViewModel,
     loginViewModel: LoginViewModel,
-    themeViewModel: ThemeViewModel,
     recipientId: Int,
     recipientUsername: String,
     recipientPhotoUrl: String?
@@ -80,6 +79,9 @@ fun ChatScreen(
     val coroutineScope = rememberCoroutineScope()
 
     val isLoading by chatViewModel.isLoading.collectAsState()
+    LaunchedEffect(loggedUser) {
+
+    }
 
     LaunchedEffect(recipientId) {
         chatViewModel.getChatHistory(recipientId)
@@ -107,7 +109,6 @@ fun ChatScreen(
                     .padding(padding)
                     .fillMaxSize()
             ) {
-
                 if (isLoading) {
                     LoadingDialog(
                         isLoading = isLoading,
@@ -124,7 +125,7 @@ fun ChatScreen(
                             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            items(messages, key = { it.id!! }) { message ->
+                            items(messages.sortedBy { it.createdAt }, key = { it.id!! }) { message ->
                                 val isCurrentUser = message.sender.id == currentUserId
                                 MessageBubble(
                                     message = message,
@@ -175,7 +176,7 @@ fun ChatTopBar(
                     Text(text = recipientUsername, style = MaterialTheme.typography.titleMedium)
 
                     Text(
-                        text = "Online",
+                        text = "🟢 Online",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )

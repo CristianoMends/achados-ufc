@@ -52,8 +52,7 @@ fun ItemDetailScreen(
     val context = LocalContext.current
 
     LaunchedEffect(itemId) {
-        if (itemId != -1) itemViewModel.getItemDetails(itemId)
-        else itemViewModel.setErrorMessage("ID do item inválido.")
+        itemViewModel.getItemById(itemId)
     }
 
     Scaffold(
@@ -89,7 +88,7 @@ fun ItemDetailScreen(
                         .padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    // Componentes bem definidos
+
                     ItemImage(imageUrl = currentItem.imageUrl, description = currentItem.title)
                     ItemInfoCard(
                         title = currentItem.title,
@@ -115,7 +114,15 @@ fun ItemDetailScreen(
                         item = currentItem,
                         isOwner = currentItem.user.id == loggedUser?.id,
                         context = context,
-                        onNotifyClick = { itemViewModel.notifyItemOwner(currentItem.id) },
+                        onSendMessage = {
+                            navController.navigate(
+                                Screen.Chat.createRoute(
+                                    recipientId = item!!.user.id,
+                                    recipientUsername = item!!.user.username,
+                                    photoUrl = item!!.user.imageUrl
+                                )
+                            )
+                        },
                         onScheduleClick = { /* Lógica do alarme pode ficar aqui ou ser chamada */ }
                     )
                 }

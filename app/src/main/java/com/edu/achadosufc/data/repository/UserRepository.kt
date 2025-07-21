@@ -25,6 +25,15 @@ class UserRepository(
         return userDao.getUserByUsername(username).map { it?.toUserResponse() }
     }
 
+    suspend fun clearLocalDatabase(){
+        try {
+            userDao.clearAllUsers()
+        } catch (e: Exception) {
+            Log.e("UserRepository", "Error clearing local database: ${e.message}")
+            throw e
+        }
+    }
+
     suspend fun fetchUserByIdAndSave(userId: Int): UserResponse? {
         try {
 

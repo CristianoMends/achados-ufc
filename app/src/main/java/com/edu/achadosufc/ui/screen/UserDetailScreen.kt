@@ -24,17 +24,20 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
+import com.edu.achadosufc.data.model.Item
+import com.edu.achadosufc.data.model.UserResponse
 import com.edu.achadosufc.ui.components.AppTopBar
 import com.edu.achadosufc.ui.components.PostGridItem
 import com.edu.achadosufc.ui.components.UserDetailHeader
-import com.edu.achadosufc.viewModel.ItemViewModel
-import com.edu.achadosufc.viewModel.LoginViewModel
 import com.edu.achadosufc.viewModel.ThemeViewModel
 import com.edu.achadosufc.viewModel.UserViewModel
 
@@ -43,18 +46,17 @@ fun UserDetailScreen(
     navController: NavController,
     userId: Int,
     userViewModel: UserViewModel,
-    themeViewModel: ThemeViewModel,
-    itemViewModel: ItemViewModel,
-    loginViewModel: LoginViewModel
+    themeViewModel: ThemeViewModel
 ) {
-    val user by userViewModel.selectedUser.collectAsStateWithLifecycle()
-    val userItems by userViewModel.userItems.collectAsStateWithLifecycle()
+    var user by remember { mutableStateOf<UserResponse?>(null) }
+    var userItems by remember { mutableStateOf<List<Item>?>(null) }
     val isLoading by userViewModel.isLoading.collectAsStateWithLifecycle()
     val errorMessage by userViewModel.errorMessage.collectAsStateWithLifecycle()
 
     LaunchedEffect(userId) {
         if (userId != -1) {
-            userViewModel.getUserDetailsAndItems(userId)
+            user = userViewModel.getUserById(userId)
+            userItems = userViewModel.getItemsByUserId(userId)
         } else {
             userViewModel.setErrorMessage("ID do usuário inválido.")
         }
@@ -99,24 +101,17 @@ fun UserDetailScreen(
                 ) {
                     item(span = { GridItemSpan(maxLineSpan) }) {
                         user?.let { currentUser ->
-                            UserDetailHeader(
-                                user = user!!,
-                                postCount = userItems.size,
-                                onSendMessageClick = {
-                                    navController.navigate(
-                                        Screen.Chat.createRoute(
-                                            recipientId = currentUser.id,
-                                            recipientUsername = currentUser.username,
-                                            photoUrl = currentUser.imageUrl
-                                        )
-                                    )
-                                }
-                            )
+                            userItems?.let {
+                                UserDetailHeader(
+                                    user = user!!,
+                                    postCount = it.size,
+                                )
+                            }
                         }
                     }
 
-                    if (userItems.isNotEmpty()) {
-                        items(userItems) { item ->
+                    if (userItems?.isNotEmpty() == true) {
+                        items(userItems!!) { item ->
                             PostGridItem(item = item, onClick = {
                                 navController.navigate(Screen.ItemDetail.createRoute(item.id))
                             })

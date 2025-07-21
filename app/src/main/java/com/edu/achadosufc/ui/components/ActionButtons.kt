@@ -19,7 +19,7 @@ fun ActionButtons(
     item: Item,
     isOwner: Boolean,
     context: Context,
-    onNotifyClick: () -> Unit,
+    onSendMessage: () -> Unit,
     onScheduleClick: () -> Unit
 ) {
     Column(
@@ -28,11 +28,11 @@ fun ActionButtons(
     ) {
         if (!isOwner) {
             Button(
-                onClick = onNotifyClick,
+                onClick = onSendMessage,
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Text(
-                    text = if (item.isFound) "EU PERDI ISSO!" else "EU ENCONTREI!",
+                    text = "Enviar Mensagem",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )

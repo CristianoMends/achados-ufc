@@ -31,48 +31,21 @@ import com.edu.achadosufc.viewModel.ReportViewModel
 import com.edu.achadosufc.viewModel.SignUpViewModel
 import com.edu.achadosufc.viewModel.ThemeViewModel
 import com.edu.achadosufc.viewModel.UserViewModel
+import org.koin.androidx.compose.koinViewModel
 
 @Composable
 fun AppNavHost(
-    navController: NavHostController,
-    loginViewModel: LoginViewModel,
-    signUpViewModel: SignUpViewModel,
-    homeViewModel: HomeViewModel,
-    userViewModel: UserViewModel,
-    itemViewModel: ItemViewModel,
-    reportViewModel: ReportViewModel,
-    themeViewModel: ThemeViewModel,
-    chatViewModel: ChatViewModel
+    navController: NavHostController
 ) {
-    val isAutoLoginCheckComplete by loginViewModel.isAutoLoginCheckComplete.collectAsState()
-    val loggedUser by loginViewModel.loggedUser.collectAsState()
-    val startDestination = remember { mutableStateOf(Screen.Splash.route) }
-
-    LaunchedEffect(isAutoLoginCheckComplete, loggedUser) {
-        if (isAutoLoginCheckComplete) {
-            val destination = if (loggedUser != null) {
-                Screen.Home.route
-            } else {
-                Screen.Login.route
-            }
-
-            startDestination.value = destination
-
-            navController.navigate(destination) {
-                popUpTo(Screen.Splash.route) { inclusive = true }
-                launchSingleTop = true
-            }
-        }
-    }
-    NavHost(navController, startDestination = startDestination.value) {
+    NavHost(navController, startDestination = Screen.Splash.route) {
         composable(Screen.Splash.route) {
-            SplashScreen()
+            SplashScreen(navController)
         }
         composable(Screen.SignUp.route) {
             SignUpScreen(
                 navController = navController,
-                signUpViewModel = signUpViewModel,
-                themeViewModel = themeViewModel
+                signUpViewModel = koinViewModel(),
+                themeViewModel = koinViewModel()
             )
         }
         composable(
@@ -84,9 +57,9 @@ fun AppNavHost(
                 ItemDetailScreen(
                     navController = navController,
                     itemId = itemId,
-                    itemViewModel = itemViewModel,
-                    loginViewModel = loginViewModel,
-                    themeViewModel = themeViewModel,
+                    itemViewModel = koinViewModel(),
+                    loginViewModel = koinViewModel(),
+                    themeViewModel = koinViewModel(),
                 )
             } else {
                 Text(text = "Erro: ID do item não encontrado.")
@@ -111,9 +84,8 @@ fun AppNavHost(
             if (recipientId != -1 && recipientUsername.isNotEmpty()) {
                 ChatScreen(
                     navController = navController,
-                    chatViewModel = chatViewModel,
-                    loginViewModel = loginViewModel,
-                    themeViewModel = themeViewModel,
+                    chatViewModel = koinViewModel(),
+                    loginViewModel = koinViewModel(),
                     recipientId = recipientId,
                     recipientUsername = recipientUsername,
                     recipientPhotoUrl = recipientPhotoUrl
@@ -125,33 +97,32 @@ fun AppNavHost(
         composable(Screen.Home.route) {
             HomeScreen(
                 navController = navController,
-                homeViewModel = homeViewModel,
-                itemViewModel = itemViewModel,
-                themeViewModel = themeViewModel,
-                loginViewModel = loginViewModel
+                homeViewModel = koinViewModel(),
+                itemViewModel = koinViewModel(),
+                themeViewModel = koinViewModel(),
+                loginViewModel = koinViewModel()
             )
         }
         composable(Screen.ReportItem.route) {
             ReportItemScreen(
                 navController = navController,
-                reportViewModel = reportViewModel,
-                themeViewModel = themeViewModel,
-                loginViewModel = loginViewModel
+                reportViewModel = koinViewModel(),
+                themeViewModel = koinViewModel(),
+                loginViewModel = koinViewModel()
             )
         }
         composable(Screen.Login.route) {
             LoginScreen(
                 navController = navController,
-                loginViewModel = loginViewModel
+                loginViewModel = koinViewModel()
             )
         }
         composable(Screen.Profile.route) {
             UserProfileScreen(
                 navController = navController,
-                loginViewModel = loginViewModel,
-                itemViewModel = itemViewModel,
-                themeViewModel = themeViewModel,
-                userViewModel = userViewModel
+                loginViewModel = koinViewModel(),
+                itemViewModel = koinViewModel(),
+                themeViewModel = koinViewModel(),
             )
         }
         composable(
@@ -162,19 +133,17 @@ fun AppNavHost(
             UserDetailScreen(
                 navController = navController,
                 userId = userId,
-                userViewModel = userViewModel,
-                themeViewModel = themeViewModel,
-                itemViewModel = itemViewModel,
-                loginViewModel = loginViewModel
+                userViewModel = koinViewModel(),
+                themeViewModel = koinViewModel()
             )
         }
         composable(Screen.Search.route) {
             SearchScreen(
                 navController = navController,
-                homeViewModel = homeViewModel,
-                itemViewModel = itemViewModel,
-                themeViewModel = themeViewModel,
-                loginViewModel = loginViewModel
+                homeViewModel = koinViewModel(),
+                itemViewModel = koinViewModel(),
+                themeViewModel = koinViewModel(),
+                loginViewModel = koinViewModel()
             )
         }
     }

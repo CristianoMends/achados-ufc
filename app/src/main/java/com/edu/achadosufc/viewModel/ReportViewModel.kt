@@ -1,71 +1,74 @@
 package com.edu.achadosufc.viewModel
 
 import android.content.Context
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
+import android.net.ConnectivityManager
 import android.net.Uri
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
-import com.edu.achadosufc.data.SessionManager
-import com.edu.achadosufc.data.model.ItemRequest
-import com.edu.achadosufc.data.repository.FileRepository
-import com.edu.achadosufc.data.repository.ItemRepository
-import com.edu.achadosufc.utils.FileUtils
+import androidx.work.Constraints
+import androidx.work.NetworkType
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
+import androidx.work.workDataOf
+import com.edu.achadosufc.worker.ReportUploadWorker
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.launch
-import okhttp3.MediaType.Companion.toMediaTypeOrNull
-import okhttp3.MultipartBody
-import okhttp3.RequestBody.Companion.asRequestBody
-import java.io.File
-import java.io.InputStream
 
 class ReportViewModel(
-    private val itemRepository: ItemRepository,
     private val applicationContext: Context
 ) : ViewModel() {
 
-    private val sessionManager = SessionManager(applicationContext)
     private val _isLoading = MutableStateFlow(false)
     val isLoading = _isLoading.asStateFlow()
 
     private val _success = MutableStateFlow(false)
     val success = _success.asStateFlow()
 
-    private val _error = MutableStateFlow<String?>(null)
-    val error = _error.asStateFlow()
+    private val _message = MutableStateFlow<String?>(null)
+    val message = _message.asStateFlow()
 
     fun submitReport(
         title: String,
         description: String,
         location: String,
-        isLost: Boolean,
+        isFound: Boolean,
         imageUri: Uri?
     ) {
-        viewModelScope.launch {
-            _isLoading.value = true
-            _error.value = null
-
-            try {
-                imageUri?.let { FileUtils.prepareResizedFilePart(it, applicationContext) }?.let {
-                    itemRepository.create(
-                        title = title,
-                        description = description,
-                        location = location,
-                        file = it,
-                        isFound = isLost,
-                        token = ("Bearer " + sessionManager.fetchAuthToken()) ?: ""
-                    )
-                }
-                _success.value = true
-
-            } catch (e: Exception) {
-                _error.value = "Erro ao publicar: ${e.message}"
-                _success.value = false
-            } finally {
-                _isLoading.value = false
-            }
+        if (title.isBlank() || description.isBlank() || location.isBlank() || imageUri == null) {
+            _message.value = "Todos os campos são obrigatórios."
+            _success.value = false
+            return
         }
+
+        _isLoading.value = true
+        _message.value = null
+
+        val workData = workDataOf(
+            "TITLE" to title,
+            "DESCRIPTION" to description,
+            "LOCATION" to location,
+            "IS_FOUND" to isFound,
+            "IMAGE_URI" to imageUri.toString()
+        )
+
+        // Define as restrições: o trabalho só será executado quando houver internet
+        val constraints = Constraints.Builder()
+            .setRequiredNetworkType(NetworkType.CONNECTED)
+            .build()
+
+        // Cria a requisição de trabalho
+        val uploadWorkRequest = OneTimeWorkRequestBuilder<ReportUploadWorker>()
+            .setInputData(workData)
+            .setConstraints(constraints)
+            .build()
+
+        // Agenda o trabalho com o WorkManager
+        WorkManager.getInstance(applicationContext).enqueue(uploadWorkRequest)
+
+        // FEEDBACK DE SUCESSO IMEDIATO PARA O USUÁRIO!
+        _isLoading.value = false
+        _success.value = true
+        _message.value = "Publicação enviada para fila de upload. Você receberá uma notificação quando for processada."
+
     }
 
     fun resetSuccessState() {
@@ -73,6 +76,6 @@ class ReportViewModel(
     }
 
     fun clearError() {
-        _error.value = null
+        _message.value = null
     }
 }

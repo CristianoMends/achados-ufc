@@ -22,10 +22,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AddAPhoto
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenuItem
@@ -34,8 +31,6 @@ import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -56,7 +51,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import coil.compose.rememberAsyncImagePainter
@@ -68,7 +62,6 @@ import com.edu.achadosufc.ui.components.SegmentedButton
 import com.edu.achadosufc.viewModel.LoginViewModel
 import com.edu.achadosufc.viewModel.ReportViewModel
 import com.edu.achadosufc.viewModel.ThemeViewModel
-import com.edu.achadosufc.viewModel.UserViewModel
 import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -207,7 +200,7 @@ fun ReportItemScreen(
     }
 
     var cameraImageUri by rememberSaveable { mutableStateOf<Uri?>(null) }
-    val error by reportViewModel.error.collectAsState()
+    val message by reportViewModel.message.collectAsState()
 
     val cameraLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicture()
@@ -239,7 +232,7 @@ fun ReportItemScreen(
         }
     }
 
-    LaunchedEffect(error) {
+    LaunchedEffect(message) {
 
     }
 
@@ -254,10 +247,10 @@ fun ReportItemScreen(
         )
     }
 
-    if (error != null) {
+    if (message != null) {
         MessageDialog(
-            title = "Ocorreu um Erro",
-            message = error ?: "Não foi possível completar a operação. Tente novamente.",
+            title = if (success) "Sucesso!" else "Erro",
+            message = message ?: if (success) "Seu item foi publicado com sucesso!" else "Ocorreu um erro ao publicar o item.",
             confirmButtonText = "OK",
             confirmButtonAction = {
                 reportViewModel.clearError()
@@ -405,7 +398,7 @@ fun ReportItemScreen(
                         title = title,
                         description = description,
                         location = selectedLocation,
-                        isLost = isLost,
+                        isFound = isLost,
                         imageUri = selectedImageUri
                     )
                 },

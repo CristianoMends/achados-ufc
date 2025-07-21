@@ -37,7 +37,6 @@ import com.edu.achadosufc.ui.components.ProfileHeader
 import com.edu.achadosufc.viewModel.ItemViewModel
 import com.edu.achadosufc.viewModel.LoginViewModel
 import com.edu.achadosufc.viewModel.ThemeViewModel
-import com.edu.achadosufc.viewModel.UserViewModel
 
 @Composable
 fun UserProfileScreen(
@@ -45,7 +44,6 @@ fun UserProfileScreen(
     loginViewModel: LoginViewModel,
     itemViewModel: ItemViewModel,
     themeViewModel: ThemeViewModel,
-    userViewModel: UserViewModel
 ) {
     val user by loginViewModel.loggedUser.collectAsStateWithLifecycle()
     val reportedItems by itemViewModel.items.collectAsStateWithLifecycle()
@@ -66,7 +64,6 @@ fun UserProfileScreen(
             dismissButtonText = "Cancelar",
             confirmButtonAction = {
                 loginViewModel.logout()
-                userViewModel.cleanAllData()
                 navController.navigate(Screen.Login.route) {
                     popUpTo(navController.graph.id) { inclusive = true }
                 }

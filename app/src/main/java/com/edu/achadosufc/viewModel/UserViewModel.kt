@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import java.net.UnknownHostException
 
@@ -108,7 +109,9 @@ class UserViewModel(
 
     }
 
-    fun cleanAllData() {
+    suspend fun cleanAllData() {
+        userRepository.clearLocalDatabase()
+        itemRepository.clearLocalDatabase()
         _selectedUser.value = null
         _loggedUser.value = null
         _userItems.value = emptyList()
@@ -136,7 +139,13 @@ class UserViewModel(
 
             try {
                 userRepository.fetchUserByIdAndSave(userId)
+
             } catch (e: Exception) {
+                _errorMessage.value = "Erro ao carregar detalhes do usuário: ${e.message}"
+                _isLoading.value = false
+                return@launch
+            } finally {
+                _isLoading.value = false
             }
 
             userRepository.getUserByIdLocal(userId)
@@ -148,6 +157,26 @@ class UserViewModel(
                 .collectLatest { userFromDb ->
                     _selectedUser.value = userFromDb
                 }
+        }
+    }
+
+    suspend fun getUserById(userId: Int): UserResponse? {
+        return userRepository.getUserByIdLocal(userId).run {
+            try {
+                this.firstOrNull()
+            } catch (e: Exception) {
+                null
+            }
+        }
+    }
+
+    suspend fun getItemsByUserId(userId: Int): List<Item> {
+        return itemRepository.getItemsByUserIdFromLocalDb(userId).run {
+            try {
+                this.firstOrNull() ?: emptyList()
+            } catch (e: Exception) {
+                emptyList()
+            }
         }
     }
 

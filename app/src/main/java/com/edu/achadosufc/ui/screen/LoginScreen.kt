@@ -1,6 +1,7 @@
 package com.edu.achadosufc.ui.screen
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -11,12 +12,14 @@ import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.input.KeyboardType
@@ -24,12 +27,14 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.navigation.NavController
 import com.edu.achadosufc.R
 import com.edu.achadosufc.ui.components.MessageDialog
 import com.edu.achadosufc.viewModel.LoginViewModel
 
 @Composable
+@OptIn(ExperimentalComposeUiApi::class)
 fun LoginScreen(
     navController: NavController,
     loginViewModel: LoginViewModel
@@ -42,6 +47,7 @@ fun LoginScreen(
     val confirmButtonAction by loginViewModel.confirmButtonAction.collectAsStateWithLifecycle()
     var passwordVisible by remember { mutableStateOf(false) }
     val user by loginViewModel.loggedUser.collectAsStateWithLifecycle()
+    val focusManager = LocalFocusManager.current
 
     LaunchedEffect(user) {
         user?.let {
@@ -101,7 +107,12 @@ fun LoginScreen(
                         unfocusedTextColor = Color(0xFFE3E3E3),
                         cursorColor = Color(0xFFE3E3E3)
                     ),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email)
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Email,
+                        imeAction = ImeAction.Next
+                    ),
+                    keyboardActions = KeyboardActions(
+                        onNext = { focusManager.moveFocus(FocusDirection.Down) })
                 )
                 OutlinedTextField(
                     value = password,
@@ -133,7 +144,14 @@ fun LoginScreen(
                     modifier = Modifier.fillMaxWidth(),
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Password,
-                        imeAction = ImeAction.Done
+                        imeAction = ImeAction.Done,
+                    ),
+                    keyboardActions = KeyboardActions(
+                        onDone = {
+                            if ((email.isNotBlank() && password.isNotBlank()) && !loading) {
+                                loginViewModel.login()
+                            }
+                        }
                     )
                 )
 

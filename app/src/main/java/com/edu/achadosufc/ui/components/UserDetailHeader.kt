@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -28,7 +27,6 @@ import com.edu.achadosufc.data.model.UserResponse
 fun UserDetailHeader(
     user: UserResponse,
     postCount: Int,
-    onSendMessageClick: () -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -64,13 +62,6 @@ fun UserDetailHeader(
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         Spacer(modifier = Modifier.height(16.dp))
-
-        OutlinedButton(
-            onClick = onSendMessageClick,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("Enviar Mensagem")
-        }
 
         HorizontalDivider(modifier = Modifier.padding(top = 24.dp))
 

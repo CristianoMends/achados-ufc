@@ -12,6 +12,8 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.BlendMode
@@ -19,10 +21,33 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.NavController
 import com.edu.achadosufc.R
+import com.edu.achadosufc.viewModel.LoginViewModel
+import org.koin.androidx.compose.koinViewModel
 
 @Composable
-fun SplashScreen() {
+fun SplashScreen(navController: NavController) {
+    val loginViewModel: LoginViewModel = koinViewModel()
+    val isAutoLoginCheckComplete by loginViewModel.isAutoLoginCheckComplete.collectAsStateWithLifecycle()
+    val loggedUser by loginViewModel.loggedUser.collectAsStateWithLifecycle()
+
+    LaunchedEffect(isAutoLoginCheckComplete, loggedUser) {
+
+        if (isAutoLoginCheckComplete) {
+            val destination = if (loggedUser != null) {
+                Screen.Home.route
+            } else {
+                Screen.Login.route
+            }
+            navController.navigate(destination) {
+                popUpTo(Screen.Splash.route) { inclusive = true }
+                launchSingleTop = true
+            }
+        }
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize(),

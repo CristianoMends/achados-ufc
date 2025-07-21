@@ -9,6 +9,7 @@ import com.edu.achadosufc.data.SessionManager
 import com.edu.achadosufc.data.model.UserResponse
 import com.edu.achadosufc.data.repository.LoginRepository
 import com.edu.achadosufc.data.UserPreferences
+import com.edu.achadosufc.data.repository.ItemRepository
 import com.edu.achadosufc.data.repository.UserRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -20,6 +21,7 @@ class LoginViewModel(
 
     private val userRepository: UserRepository,
     private val loginRepository: LoginRepository,
+    private val itemRepository: ItemRepository,
     private val userPreferencesRepository: UserPreferences,
     private val context: Context
 ) : ViewModel() {
@@ -122,12 +124,10 @@ class LoginViewModel(
     }
 
     fun login() {
-
         if (_email.value.isBlank() || _password.value.isBlank()) {
             _error.value = "Preencha todos os campos"
             _confirmButtonAction.value = { clearErrorMessage() }
             return
-
         }
 
         if (!isInternetAvailable()) {
@@ -139,8 +139,9 @@ class LoginViewModel(
         _loading.value = true
         _error.value = null
         _loggedUser.value = null
-        viewModelScope.launch {
 
+        viewModelScope.launch {
+            userPreferencesRepository.clearUserId()
             try {
                 val res = loginRepository.login(_email.value, _password.value)
                 if (res != null) {
@@ -149,18 +150,8 @@ class LoginViewModel(
                         _loggedUser.value = user
                         sessionManager.saveAuthToken(res.access_token)
                         sessionManager.saveUserLoggedIn(user.id)
-                        val expiresInMillis = 60 * 60 * 1000
-                        val expirationTime = System.currentTimeMillis() + expiresInMillis
-                        sessionManager.saveExpirationTime(expirationTime)
-
-                        if (_loggedUser.value != null) {
-                            userPreferencesRepository.saveUserId(user.id)
-                        } else {
-                            userPreferencesRepository.clearUserId()
-                        }
-
+                        userPreferencesRepository.saveUserId(user.id)
                     } else {
-
                         _error.value = "Login bem-sucedido, mas dados do usuário não encontrados."
                         _confirmButtonAction.value = { clearErrorMessage() }
                     }
@@ -192,26 +183,18 @@ class LoginViewModel(
                     e.message?.contains("timeout", ignoreCase = true) == true
 
                 ) {
-
                     _error.value = "Servidor indisponível. Tente novamente mais tarde."
                     _confirmButtonAction.value = { clearErrorMessage() }
 
                 } else {
-
                     _error.value = e.message ?: "Erro desconhecido ao tentar fazer login."
-
                     _confirmButtonAction.value = { clearErrorMessage() }
-
                 }
 
             } finally {
-
                 _loading.value = false
-
             }
-
         }
-
     }
 
 

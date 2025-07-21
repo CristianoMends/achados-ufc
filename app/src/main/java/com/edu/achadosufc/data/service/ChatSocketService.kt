@@ -6,12 +6,16 @@ import com.edu.achadosufc.data.model.MessageResponse
 import com.edu.achadosufc.data.model.UserResponse
 import io.socket.client.IO
 import io.socket.client.Socket
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import org.json.JSONObject
 import org.json.JSONArray
+import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Locale
 
@@ -23,8 +27,17 @@ class ChatSocketService(context: Context) {
     private val _isConnected = MutableStateFlow(false)
     val isConnected = _isConnected.asStateFlow()
 
+    private val _messageInfo = MutableStateFlow<String?>(null)
+    val messageInfo = _messageInfo.asStateFlow()
+
+    private val _isLoading = MutableStateFlow(false)
+    val isLoading = _isLoading.asStateFlow()
+
     private val _incomingMessages = MutableSharedFlow<MessageResponse>(replay = 1)
     val incomingMessages = _incomingMessages.asSharedFlow()
+
+    private val _chatHistory = MutableSharedFlow<List<MessageResponse>>(replay = 1)
+    val chatHistory = _chatHistory.asSharedFlow()
 
     fun connect() {
         if (socket?.isActive == true) {
@@ -77,6 +90,8 @@ class ChatSocketService(context: Context) {
             val dataArray = args[0] as JSONArray
             Log.d(TAG, "Histórico de chat recebido. Número de mensagens: ${dataArray.length()}")
 
+            val messageList = mutableListOf<MessageResponse>()
+
             for (i in 0 until dataArray.length()) {
                 val messageJson = dataArray.getJSONObject(i)
                 val isRead = messageJson.optBoolean("isRead", false)
@@ -111,9 +126,10 @@ class ChatSocketService(context: Context) {
                     recipient = recipient,
                     isRead = isRead
                 )
-                _incomingMessages.tryEmit(message)
+                //_incomingMessages.tryEmit(message)
+                messageList.add(message)
             }
-
+            _chatHistory.tryEmit(messageList)
         }
         socket?.on("receivePrivateMessage") { args ->
             val data = args[0] as JSONObject
@@ -130,7 +146,7 @@ class ChatSocketService(context: Context) {
                 imageUrl = senderJson.optString(
                     "imageUrl",
                     ""
-                ) // Use optString for potentially missing fields
+                )
             )
             val recipient = UserResponse(
                 id = data.getJSONObject("recipient").getInt("id"),
@@ -173,16 +189,29 @@ class ChatSocketService(context: Context) {
         socket?.emit("sendPrivateMessage", payload)
     }
 
-    fun getChatHistory(otherUserId: Int) {
-        if (socket?.isActive != true) {
-            Log.w(TAG, "Tentativa de obter histórico de chat, mas o socket não está conectado.")
-            return
+    suspend fun getChatHistory(otherUserId: Int):Boolean {
+        CoroutineScope(Dispatchers.IO).launch {
+            var attempts = 0
+            val maxAttempts = 10 // Tentar por no máximo 5 segundos (10 * 500ms)
+            while (socket?.isActive != true && attempts < maxAttempts) {
+                Log.w(TAG, "Socket não está ativo. Tentando obter histórico de chat... Tentativa ${attempts + 1}")
+                delay(1000) // Espera 500ms antes de tentar novamente
+                attempts++
+            }
+
+            if (socket?.isActive != true) {
+                Log.e(TAG, "Falha ao obter histórico de chat: o socket não ficou ativo após $maxAttempts tentativas.")
+                _messageInfo.value = "Erro ao obter histórico de chat. Tente novamente mais tarde."
+                return@launch
+            }
+            val payload = JSONObject().apply {
+                put("otherUserId", otherUserId)
+            }
+            Log.d(TAG, "Solicitando histórico de chat com o usuário $otherUserId")
+            socket?.emit("getChatHistory", payload)
+            Log.d(TAG, "Histórico de chat solicitado com sucesso.")
         }
-        val payload = JSONObject().apply {
-            put("otherUserId", otherUserId)
-        }
-        Log.d(TAG, "Solicitando histórico de chat com o usuário $otherUserId")
-        socket?.emit("getChatHistory", payload)
+        return true
     }
 
     fun disconnect() {
@@ -191,5 +220,6 @@ class ChatSocketService(context: Context) {
         socket?.off()
         socket = null
         _isConnected.value = false
+        Log.d(TAG, "Socket desconectado e limpo.")
     }
 }

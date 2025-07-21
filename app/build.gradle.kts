@@ -41,7 +41,16 @@ android {
     }
 }
 
+val koin_version = "3.5.6"
+
+
 dependencies {
+    implementation ("io.insert-koin:koin-android:$koin_version")
+    implementation ("io.insert-koin:koin-androidx-compose:$koin_version")
+    implementation ("io.insert-koin:koin-androidx-workmanager:$koin_version")
+
+    implementation("androidx.work:work-runtime-ktx:2.9.0")
+
     implementation("io.socket:socket.io-client:2.1.0")
 
     implementation ("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")

@@ -54,10 +54,17 @@ class ChatViewModel(
                 _messages.value += newMessage
             }
         }
+        viewModelScope.launch {
+            chatSocketService.chatHistory.collect { history ->
+                Log.d("ChatViewModel", "Histórico de chat recebido: ${history.size} mensagens.")
+                _messages.value = history
+            }
+        }
     }
 
     fun getChatHistory(otherUserId: Int) {
         _isLoading.value = true
+        _messages.value = emptyList()
         viewModelScope.launch {
             chatSocketService.getChatHistory(otherUserId)
             _isLoading.value = false

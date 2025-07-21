@@ -27,8 +27,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
+import com.edu.achadosufc.data.model.UserResponse
 import com.edu.achadosufc.ui.components.AppBottomBar
 import com.edu.achadosufc.ui.components.AppTopBar
 import com.edu.achadosufc.ui.components.ItemCard
@@ -56,8 +58,8 @@ fun HomeScreen(
         isRefreshing = true
         homeViewModel.fetchItemsFromNetwork()
     }
-    val loggedUser by loginViewModel.loggedUser.collectAsState()
 
+    val loggedUser by loginViewModel.loggedUser.collectAsStateWithLifecycle()
 
     LaunchedEffect(isLoading) {
         if (!isLoading && isRefreshing) {

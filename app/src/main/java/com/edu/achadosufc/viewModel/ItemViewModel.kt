@@ -2,6 +2,7 @@ package com.edu.achadosufc.viewModel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.edu.achadosufc.data.model.Item
 import com.edu.achadosufc.data.repository.ItemRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -42,41 +43,33 @@ class ItemViewModel(
     }
 
     fun getItemsByUser(userId: Int) {
-        _isLoading.value = true
-        _errorMessage.value = null
-
         viewModelScope.launch {
-
             itemRepository.getItemsByUserIdFromLocalDb(userId)
                 .catch { e ->
-                    _errorMessage.value = "Erro ao ler publicações locais do usuário: ${e.message}"
-                    _isLoading.value = false
+                    _errorMessage.value = "Erro ao ler publicações locais: ${e.message}"
                 }
-                .collectLatest { fetchedItems ->
-                    _items.value = fetchedItems
-
-                    if (fetchedItems.isEmpty() || shouldRefreshFromNetwork(userId)) {
-                        fetchUserItemsFromNetwork(userId)
-                    }
-                    _isLoading.value = false
+                .collectLatest { itemsFromDb ->
+                    _items.value = itemsFromDb
                 }
         }
-    }
 
-    private fun fetchUserItemsFromNetwork(userId: Int) {
         viewModelScope.launch {
+            _isLoading.value = true
+            _errorMessage.value = null
             try {
                 itemRepository.fetchAndSaveItemsByUserId(userId)
             } catch (e: Exception) {
-                _errorMessage.value = "Erro ao sincronizar publicações do usuário: ${e.message}"
+                _errorMessage.value = "Erro ao sincronizar publicações: ${e.message}"
             } finally {
                 _isLoading.value = false
             }
         }
     }
 
-    private fun shouldRefreshFromNetwork(userId: Int): Boolean {
-        return _items.value.isEmpty()
+    fun getItemById(id: Int) {
+        viewModelScope.launch {
+            _selectedItem.value = itemRepository.getItemByIdFromLocalDb(id)
+        }
     }
 
     fun getItemDetails(itemId: Int) {
