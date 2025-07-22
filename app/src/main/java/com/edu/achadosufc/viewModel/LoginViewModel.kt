@@ -3,6 +3,7 @@ package com.edu.achadosufc.viewModel
 
 import android.net.ConnectivityManager
 import android.content.Context
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.edu.achadosufc.data.SessionManager
@@ -11,11 +12,14 @@ import com.edu.achadosufc.data.repository.LoginRepository
 import com.edu.achadosufc.data.UserPreferences
 import com.edu.achadosufc.data.repository.UserRepository
 import com.edu.achadosufc.data.service.ChatSocketService
+import com.google.android.gms.auth.api.signin.GoogleSignInClient
+import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 import org.koin.core.context.GlobalContext
 
 class LoginViewModel(
@@ -97,6 +101,36 @@ class LoginViewModel(
 
     }
 
+    fun loginWithGoogle(idToken: String) {
+        _loading.value = true
+        viewModelScope.launch {
+            try {
+                val res = loginRepository.loginWithGoogle(idToken)
+
+                if (res != null) {
+
+                    val firebaseUser = FirebaseAuth.getInstance().currentUser
+                    userRepository.fetchUserByEmailAndSave(firebaseUser?.email ?: "")
+
+                    val user = userRepository.getUserByEmailLocal(firebaseUser?.email ?: "")
+
+                    _loggedUser.value = user
+                    if (user != null) {
+                        sessionManager.saveUserLoggedIn(user.id)
+                        userPreferencesRepository.saveUserId(user.id)
+                    }
+                    chatSocketService.connect()
+                } else {
+                    _error.value = "Falha ao autenticar com o Google no servidor."
+                }
+            } catch (e: Exception) {
+                _error.value = "Erro no login com Google: ${e.message}"
+            } finally {
+                _loading.value = false
+            }
+        }
+    }
+
 
     fun clearErrorMessage() {
         _error.value = null
@@ -106,7 +140,6 @@ class LoginViewModel(
     fun onEmailChanged(value: String) {
         _email.value = value
         _error.value = null
-
     }
 
 
@@ -130,6 +163,10 @@ class LoginViewModel(
         viewModelScope.launch {
             userPreferencesRepository.saveUserId(userId)
         }
+    }
+
+    fun getGoogleSignInClient(context: Context): GoogleSignInClient {
+        return loginRepository.getGoogleSignInClient(context)
     }
 
     fun login() {
@@ -215,9 +252,18 @@ class LoginViewModel(
 
 
     suspend fun logout() {
+        FirebaseAuth.getInstance().signOut()
+        try {
+            val googleSignInClient = loginRepository.getGoogleSignInClient(context)
+            googleSignInClient.signOut().await()
+        } catch (e: Exception) {
+            Log.e("LoginViewModel", "Erro ao fazer signOut do Google", e)
+        }
+
         chatSocketService.disconnect()
         sessionManager.clearSession()
         userPreferencesRepository.clearUserId()
+
         _loading.value = true
         _error.value = null
         _loggedUser.value = null

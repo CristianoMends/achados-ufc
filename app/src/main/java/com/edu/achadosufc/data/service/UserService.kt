@@ -7,6 +7,7 @@ import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
 import retrofit2.http.Path
+import retrofit2.http.Query
 
 interface UserService {
 
@@ -18,5 +19,8 @@ interface UserService {
 
     @POST("users")
     suspend fun createUser(@Body user: UserRequest): Response<UserResponse>
+
+    @GET("users/search")
+    suspend fun getUserByEmail(@Query("email") email: String): Response<UserResponse?>
 
 }

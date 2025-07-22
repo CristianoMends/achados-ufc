@@ -34,6 +34,38 @@ class UserRepository(
         }
     }
 
+    suspend fun fetchUserByEmailAndSave(email: String){
+        try {
+            val response = apiService.getUserByEmail(email)
+            if (response.isSuccessful) {
+                val userFromApi = response.body()
+                userFromApi?.let {
+                    userDao.insertUser(it.toUserEntity())
+                } ?: run {
+                    Log.e("UserRepository", "No user found with email: $email")
+                }
+            } else {
+                val errorBody = response.errorBody()?.string()
+                throw HttpException(response)
+            }
+        } catch (e: UnknownHostException) {
+            Log.e("UserRepository", "Network error: ${e.message}")
+        } catch (e: Exception) {
+            Log.e("UserRepository", "Error fetching user by email: ${e.message}")
+            throw e
+        }
+    }
+
+    suspend fun getUserByEmailLocal(email: String): UserResponse? {
+        return try {
+            val userEntity = userDao.getUserByEmail(email)
+            userEntity?.toUserResponse()
+        } catch (e: Exception) {
+            Log.e("UserRepository", "Error fetching user by email locally: ${e.message}")
+            null
+        }
+    }
+
     suspend fun fetchUserByIdAndSave(userId: Int): UserResponse? {
         try {
 

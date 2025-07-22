@@ -80,7 +80,7 @@ fun UserProfileScreen(
     Scaffold(
         topBar = {
             AppTopBar(
-                title = user?.username ?: "Perfil",
+                title = user?.name ?: "Perfil",
                 themeViewModel = themeViewModel,
 
                 onActionClick = { showLogoutDialog = true },

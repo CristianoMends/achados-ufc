@@ -27,7 +27,7 @@ import com.edu.achadosufc.data.model.UserResponse
 
 @Composable
 fun ProfileHeader(
-    user: UserResponse, // Supondo que seu modelo de usuário se chame UserResponse
+    user: UserResponse,
     postCount: Int,
     onEditProfileClick: () -> Unit
 ) {
@@ -60,7 +60,7 @@ fun ProfileHeader(
             fontWeight = FontWeight.Bold
         )
         Text(
-            text = "@${user.username}",
+            text = user.username,
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )

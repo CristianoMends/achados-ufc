@@ -102,7 +102,7 @@ fun SignUpScreen(
                 title = "Cadastre-se",
                 showBackButton = true,
                 onBackClick = { navController.popBackStack() },
-                themeViewModel= themeViewModel
+                themeViewModel = themeViewModel
             )
         }
     ) { paddingValues ->
@@ -299,8 +299,21 @@ fun SignUpScreen(
                                 modifier = Modifier.fillMaxWidth(),
                                 enabled = !isLoading
                             ) {
-                                Text(if (isLoading) "Cadastrando..." else "Cadastrar")
+                                Text(if (isLoading) "Criando conta..." else "Criar conta")
                             }
+
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Text(
+                                text = "Já tem uma conta? Faça login",
+                                style = MaterialTheme.typography.bodyMedium,
+                                modifier = Modifier
+                                    .clickable {
+                                        navController.navigate(Screen.Login.route) {
+                                            popUpTo(navController.graph.id) { inclusive = true }
+                                        }
+                                    }
+                                    .padding(8.dp)
+                            )
                         }
                     }
                 }

@@ -46,7 +46,10 @@ val koin_version = "3.5.6"
 
 
 dependencies {
-    implementation(platform("com.google.firebase:firebase-bom:33.16.0"))
+    implementation("com.google.firebase:firebase-auth:24.0.0")
+    implementation(platform("com.google.firebase:firebase-bom:33.1.2"))
+    implementation("com.google.android.gms:play-services-auth:20.7.0")
+    implementation(platform("com.google.firebase:firebase-bom:34.0.0"))
     implementation("com.google.firebase:firebase-analytics")
 
     implementation ("io.insert-koin:koin-android:$koin_version")
