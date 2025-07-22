@@ -1,6 +1,7 @@
 package com.edu.achadosufc.di
 
 import com.edu.achadosufc.data.service.*
+import org.koin.android.ext.koin.androidContext
 import org.koin.dsl.module
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
@@ -16,4 +17,5 @@ val networkModule = module {
     single { get<Retrofit>().create(ItemService::class.java) }
     single { get<Retrofit>().create(AuthService::class.java) }
     single { get<Retrofit>().create(FileService::class.java) }
+    single { ChatSocketService(androidContext()) }
 }

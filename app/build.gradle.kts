@@ -3,6 +3,7 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     id("com.google.devtools.ksp")
+    id("com.google.gms.google-services")
 }
 
 android {
@@ -45,6 +46,9 @@ val koin_version = "3.5.6"
 
 
 dependencies {
+    implementation(platform("com.google.firebase:firebase-bom:33.16.0"))
+    implementation("com.google.firebase:firebase-analytics")
+
     implementation ("io.insert-koin:koin-android:$koin_version")
     implementation ("io.insert-koin:koin-androidx-compose:$koin_version")
     implementation ("io.insert-koin:koin-androidx-workmanager:$koin_version")

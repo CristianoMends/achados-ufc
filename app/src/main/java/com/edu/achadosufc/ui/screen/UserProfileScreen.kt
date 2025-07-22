@@ -21,6 +21,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -37,6 +38,7 @@ import com.edu.achadosufc.ui.components.ProfileHeader
 import com.edu.achadosufc.viewModel.ItemViewModel
 import com.edu.achadosufc.viewModel.LoginViewModel
 import com.edu.achadosufc.viewModel.ThemeViewModel
+import kotlinx.coroutines.launch
 
 @Composable
 fun UserProfileScreen(
@@ -48,7 +50,7 @@ fun UserProfileScreen(
     val user by loginViewModel.loggedUser.collectAsStateWithLifecycle()
     val reportedItems by itemViewModel.items.collectAsStateWithLifecycle()
     val isLoading by itemViewModel.isLoading.collectAsStateWithLifecycle()
-
+    val coroutineScope = rememberCoroutineScope()
 
     LaunchedEffect(user) {
         user?.id?.let { itemViewModel.getItemsByUser(it) }
@@ -63,9 +65,11 @@ fun UserProfileScreen(
             confirmButtonText = "Sair",
             dismissButtonText = "Cancelar",
             confirmButtonAction = {
-                loginViewModel.logout()
-                navController.navigate(Screen.Login.route) {
-                    popUpTo(navController.graph.id) { inclusive = true }
+                coroutineScope.launch {
+                    loginViewModel.logout()
+                    navController.navigate(Screen.Login.route) {
+                        popUpTo(navController.graph.id) { inclusive = true }
+                    }
                 }
                 showLogoutDialog = false
             },
@@ -115,7 +119,12 @@ fun UserProfileScreen(
 
                 if (isLoading) {
                     item(span = { GridItemSpan(maxLineSpan) }) {
-                        Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxWidth().padding(32.dp)) {
+                        Box(
+                            contentAlignment = Alignment.Center,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(32.dp)
+                        ) {
                             CircularProgressIndicator()
                         }
                     }
@@ -131,7 +140,9 @@ fun UserProfileScreen(
                             text = "Nenhuma publicação ainda.",
                             style = MaterialTheme.typography.bodyLarge,
                             textAlign = TextAlign.Center,
-                            modifier = Modifier.fillMaxWidth().padding(vertical = 48.dp)
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 48.dp)
                         )
                     }
                 }

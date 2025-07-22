@@ -1,6 +1,5 @@
 package com.edu.achadosufc.di
 
-import ChatSocketService
 import com.edu.achadosufc.data.SessionManager
 import com.edu.achadosufc.data.UserPreferences
 import com.edu.achadosufc.data.repository.*
@@ -14,6 +13,5 @@ val repositoryModule = module {
     single { FileRepository(get()) }
     single { ItemRepository(get(), get()) }
     single { SessionManager(androidContext()) }
-    single { ChatSocketService(androidContext()) }
     single { ChatRepository(get(), get()) }
 }

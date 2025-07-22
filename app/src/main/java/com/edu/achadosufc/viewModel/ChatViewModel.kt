@@ -1,10 +1,9 @@
 package com.edu.achadosufc.viewModel
 
-import ChatSocketService
+import com.edu.achadosufc.data.service.ChatSocketService
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.edu.achadosufc.data.model.MessageRequest
 import com.edu.achadosufc.data.model.MessageResponse
 import com.edu.achadosufc.data.model.UserResponse
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -17,7 +16,6 @@ import kotlin.random.Random
 class ChatViewModel(
     private val loginViewModel: LoginViewModel,
     private val chatSocketService: ChatSocketService,
-
     ) : ViewModel() {
 
     private val _messages = MutableStateFlow<List<MessageResponse>>(emptyList())
@@ -37,13 +35,6 @@ class ChatViewModel(
                         "Usuário logado detectado com ID: ${user.id}. Conectando ao chat..."
                     )
                     chatSocketService.connect()
-
-                } else {
-                    Log.w(
-                        "ChatViewModel",
-                        "Usuário atual é nulo ou deslogou. Garantindo desconexão."
-                    )
-                    chatSocketService.disconnect()
                 }
             }
         }

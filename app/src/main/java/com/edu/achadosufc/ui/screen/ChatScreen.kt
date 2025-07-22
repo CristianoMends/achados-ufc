@@ -89,9 +89,7 @@ fun ChatScreen(
 
     LaunchedEffect(messages.size) {
         if (messages.isNotEmpty()) {
-            coroutineScope.launch {
-                listState.animateScrollToItem(messages.size - 1)
-            }
+            listState.animateScrollToItem(messages.size - 1)
         }
     }
 
@@ -125,7 +123,7 @@ fun ChatScreen(
                             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            items(messages.sortedBy { it.createdAt }, key = { it.id!! }) { message ->
+                            items(messages, key = { it.id!! }) { message ->
                                 val isCurrentUser = message.sender.id == currentUserId
                                 MessageBubble(
                                     message = message,

@@ -1,6 +1,6 @@
 package com.edu.achadosufc.data.repository
 
-import ChatSocketService
+import com.edu.achadosufc.data.service.ChatSocketService
 import com.edu.achadosufc.data.dao.MessageDao
 import com.edu.achadosufc.data.model.MessageEntity
 import com.edu.achadosufc.data.model.MessageResponse

@@ -9,23 +9,24 @@ import com.edu.achadosufc.data.SessionManager
 import com.edu.achadosufc.data.model.UserResponse
 import com.edu.achadosufc.data.repository.LoginRepository
 import com.edu.achadosufc.data.UserPreferences
-import com.edu.achadosufc.data.repository.ItemRepository
 import com.edu.achadosufc.data.repository.UserRepository
+import com.edu.achadosufc.data.service.ChatSocketService
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import org.koin.core.context.GlobalContext
 
 class LoginViewModel(
 
     private val userRepository: UserRepository,
     private val loginRepository: LoginRepository,
-    private val itemRepository: ItemRepository,
     private val userPreferencesRepository: UserPreferences,
     private val context: Context
 ) : ViewModel() {
 
+    private val chatSocketService = GlobalContext.get().get<ChatSocketService>()
 
     private val sessionManager: SessionManager = SessionManager(context)
     private val _loggedUser = MutableStateFlow<UserResponse?>(null)
@@ -56,6 +57,7 @@ class LoginViewModel(
                         ?: throw Exception("Usuário não encontrado no servidor.")
 
                     _loggedUser.value = userRemote
+                    chatSocketService.connect()
 
                 } catch (e: retrofit2.HttpException) {
                     if (e.code() >= 500) {
@@ -63,7 +65,12 @@ class LoginViewModel(
                         _confirmButtonAction.value = { clearErrorMessage() }
                     } else {
                         _error.value = "Sessão inválida. Faça login novamente."
-                        _confirmButtonAction.value = { logout() }
+                        _confirmButtonAction.value = {
+
+                            launch {
+                                logout()
+                            }
+                        }
                     }
 
                 } catch (e: Exception) {
@@ -73,7 +80,11 @@ class LoginViewModel(
                         _loggedUser.value = userLocal
                     } else {
                         _error.value = "Sessão inválida. Faça login novamente."
-                        _confirmButtonAction.value = { logout() }
+                        _confirmButtonAction.value = {
+                            launch {
+                                logout()
+                            }
+                        }
                     }
                 } finally {
                     _loading.value = false
@@ -88,9 +99,7 @@ class LoginViewModel(
 
 
     fun clearErrorMessage() {
-
         _error.value = null
-
     }
 
 
@@ -151,6 +160,7 @@ class LoginViewModel(
                         sessionManager.saveAuthToken(res.access_token)
                         sessionManager.saveUserLoggedIn(user.id)
                         userPreferencesRepository.saveUserId(user.id)
+                        chatSocketService.connect()
                     } else {
                         _error.value = "Login bem-sucedido, mas dados do usuário não encontrados."
                         _confirmButtonAction.value = { clearErrorMessage() }
@@ -201,22 +211,19 @@ class LoginViewModel(
     fun setErrorMessage(message: String) {
         _error.value = message
         _confirmButtonAction.value = { clearErrorMessage() }
-
     }
 
 
-    fun logout() {
-        viewModelScope.launch {
-            _loading.value = true
-            _error.value = null
-            _loggedUser.value = null
-
-            sessionManager.clearSession()
-            userPreferencesRepository.clearUserId()
-            _loading.value = false
-            clearLoginFields()
-        }
-
+    suspend fun logout() {
+        chatSocketService.disconnect()
+        sessionManager.clearSession()
+        userPreferencesRepository.clearUserId()
+        _loading.value = true
+        _error.value = null
+        _loggedUser.value = null
+        _loading.value = false
+        _isAutoLoginCheckComplete.value = true
+        clearLoginFields()
     }
 
     private fun isInternetAvailable(): Boolean {

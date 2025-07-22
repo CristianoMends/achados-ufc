@@ -1,7 +1,17 @@
+package com.edu.achadosufc.data.service
+
+import android.Manifest
+import android.app.PendingIntent
 import android.content.Context
+import android.content.Intent
+import android.content.pm.PackageManager
 import android.util.Log
+import androidx.core.app.ActivityCompat
+import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
+import com.edu.achadosufc.MainActivity
+import com.edu.achadosufc.R
 import com.edu.achadosufc.data.SessionManager
-import com.edu.achadosufc.data.model.MessageRequest
 import com.edu.achadosufc.data.model.MessageResponse
 import com.edu.achadosufc.data.model.UserResponse
 import io.socket.client.IO
@@ -19,9 +29,9 @@ import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Locale
 
-class ChatSocketService(context: Context) {
+class ChatSocketService(private val context: Context) {
     private var socket: Socket? = null
-    private val TAG = "ChatSocketService"
+    private val TAG = "com.edu.achadosufc.data.service.ChatSocketService"
     private val sessionManager = SessionManager(context)
 
     private val _isConnected = MutableStateFlow(false)
@@ -115,7 +125,7 @@ class ChatSocketService(context: Context) {
                     imageUrl = messageJson.getJSONObject("recipient").optString("imageUrl", "")
                 )
                 val dateFormat =
-                    SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault())
+                    SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.getDefault())
                 val createdAt = dateFormat.parse(messageJson.getString("createdAt"))
 
                 val message = MessageResponse(
@@ -160,7 +170,7 @@ class ChatSocketService(context: Context) {
                     ""
                 )
             )
-            val dateFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault())
+            val dateFormat = SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.getDefault())
             val createdAt = dateFormat.parse(data.getString("createdAt"))
 
             val message = MessageResponse(
@@ -171,7 +181,52 @@ class ChatSocketService(context: Context) {
                 recipient = recipient,
                 isRead = data.optBoolean("isRead", false)
             )
+
+            Log.d(TAG, "Mensagem recebida de ${message.sender.username}: ${message.text}")
+            sendNotification(message)
             _incomingMessages.tryEmit(message)
+        }
+    }
+
+    private fun sendNotification(message: MessageResponse) {
+        Log.d(TAG, "Tentando criar notificação para a mensagem: ${message.text}")
+
+        if (ActivityCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+            Log.w(TAG, "Permissão para notificações não concedida.")
+            return
+        }
+
+        // 1. Crie um Intent que abrirá a MainActivity
+        val intent = Intent(context, MainActivity::class.java).apply {
+            // Limpa a pilha de atividades para que o botão "voltar" funcione como esperado
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+
+            // 2. Adicione os dados do remetente como "extras" no Intent
+            putExtra("chat_sender_id", message.sender.id)
+            putExtra("chat_sender_username", message.sender.username)
+            putExtra("chat_sender_photo_url", message.sender.imageUrl)
+        }
+
+        // 3. Crie um PendingIntent que o sistema usará para lançar seu Intent
+        val pendingIntent: PendingIntent = PendingIntent.getActivity(
+            context,
+            message.sender.id, // Request code único por remetente
+            intent,
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        )
+
+        // 4. Construa a notificação, agora com o PendingIntent
+        val builder = NotificationCompat.Builder(context, "chat_messages_channel")
+            .setSmallIcon(R.drawable.brasao_vertical_cor) // Use um ícone branco e simples
+            .setContentTitle("Nova mensagem de ${message.sender.username}")
+            .setContentText(message.text)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setContentIntent(pendingIntent) // << Ação de clique definida aqui
+            .setAutoCancel(true) // Remove a notificação quando tocada
+
+        with(NotificationManagerCompat.from(context)) {
+            notify(message.sender.id, builder.build())
+            Log.d(TAG, "Notificação para o usuário ${message.sender.id} enviada.")
         }
     }
 
@@ -189,18 +244,24 @@ class ChatSocketService(context: Context) {
         socket?.emit("sendPrivateMessage", payload)
     }
 
-    suspend fun getChatHistory(otherUserId: Int):Boolean {
+    suspend fun getChatHistory(otherUserId: Int): Boolean {
         CoroutineScope(Dispatchers.IO).launch {
             var attempts = 0
             val maxAttempts = 10 // Tentar por no máximo 5 segundos (10 * 500ms)
             while (socket?.isActive != true && attempts < maxAttempts) {
-                Log.w(TAG, "Socket não está ativo. Tentando obter histórico de chat... Tentativa ${attempts + 1}")
+                Log.w(
+                    TAG,
+                    "Socket não está ativo. Tentando obter histórico de chat... Tentativa ${attempts + 1}"
+                )
                 delay(1000) // Espera 500ms antes de tentar novamente
                 attempts++
             }
 
             if (socket?.isActive != true) {
-                Log.e(TAG, "Falha ao obter histórico de chat: o socket não ficou ativo após $maxAttempts tentativas.")
+                Log.e(
+                    TAG,
+                    "Falha ao obter histórico de chat: o socket não ficou ativo após $maxAttempts tentativas."
+                )
                 _messageInfo.value = "Erro ao obter histórico de chat. Tente novamente mais tarde."
                 return@launch
             }

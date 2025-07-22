@@ -7,7 +7,7 @@ import org.koin.dsl.module
 
 val viewModelModule = module {
     viewModel { ThemeViewModel(get()) }
-    viewModel { LoginViewModel(get(), get(), get(), get(),androidContext()) }
+    viewModel { LoginViewModel(get(), get(), get(), androidContext()) }
     viewModel { HomeViewModel(get()) }
     viewModel { UserViewModel(get(), get(), get(), androidContext()) }
     viewModel { ItemViewModel(get()) }
