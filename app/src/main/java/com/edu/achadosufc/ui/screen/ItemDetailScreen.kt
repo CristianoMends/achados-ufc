@@ -119,7 +119,10 @@ fun ItemDetailScreen(
                                 Screen.Chat.createRoute(
                                     recipientId = item!!.user.id,
                                     recipientUsername = item!!.user.name,
-                                    photoUrl = item!!.user.imageUrl
+                                    itemPhotoUrl = item!!.imageUrl,
+                                    itemName = item!!.title,
+                                    recipientPhotoUrl = item!!.user.imageUrl ?: "",
+                                    itemId = item!!.id
                                 )
                             )
                         },

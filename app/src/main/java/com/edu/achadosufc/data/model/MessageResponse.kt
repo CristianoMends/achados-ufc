@@ -8,5 +8,6 @@ data class MessageResponse(
     val sender: UserResponse,
     val createdAt: Date,
     val recipient: UserResponse,
+    val itemId: Int,
     val isRead: Boolean = false
 )

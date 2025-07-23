@@ -3,9 +3,13 @@ package com.edu.achadosufc.viewModel
 
 import android.net.ConnectivityManager
 import android.content.Context
+import android.content.Intent
+import android.os.Build
 import android.util.Log
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.edu.achadosufc.ChatForegroundService
 import com.edu.achadosufc.data.SessionManager
 import com.edu.achadosufc.data.model.UserResponse
 import com.edu.achadosufc.data.repository.LoginRepository
@@ -104,7 +108,7 @@ class LoginViewModel(
     suspend fun loginWithGoogle(idToken: String) {
         logoutOnFirebase()
 
-        if (!isInternetAvailable()){
+        if (!isInternetAvailable()) {
             _error.value = "Sem conexão com a internet. Verifique sua conexão e tente novamente."
             _confirmButtonAction.value = { clearErrorMessage() }
             return
@@ -209,6 +213,7 @@ class LoginViewModel(
                         sessionManager.saveUserLoggedIn(user.id)
                         userPreferencesRepository.saveUserId(user.id)
                         chatSocketService.connect()
+                        startChatService(context)
                     } else {
                         _error.value = "Login bem-sucedido, mas dados do usuário não encontrados."
                         _confirmButtonAction.value = { clearErrorMessage() }
@@ -228,7 +233,8 @@ class LoginViewModel(
 
             } catch (e: retrofit2.HttpException) {
                 if (e.code() >= 500) {
-                    _error.value = "Servidor indisponível. Tente novamente mais tarde. ${e.code()} ${e.message()}"
+                    _error.value =
+                        "Servidor indisponível. Tente novamente mais tarde. ${e.code()} ${e.message()}"
                     _confirmButtonAction.value = { clearErrorMessage() }
                 } else {
                     _error.value = "Erro ao tentar fazer login: ${e.message()}"
@@ -267,6 +273,8 @@ class LoginViewModel(
         chatSocketService.disconnect()
         sessionManager.clearSession()
         userPreferencesRepository.clearUserId()
+        context.stopService(Intent(context, ChatForegroundService::class.java))
+
 
         _loading.value = true
         _error.value = null
@@ -276,7 +284,7 @@ class LoginViewModel(
         clearLoginFields()
     }
 
-    private suspend fun logoutOnFirebase(){
+    private suspend fun logoutOnFirebase() {
         FirebaseAuth.getInstance().signOut()
         try {
             val googleSignInClient = loginRepository.getGoogleSignInClient(context)
@@ -291,5 +299,14 @@ class LoginViewModel(
             context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
         val activeNetworkInfo = connectivityManager.activeNetworkInfo
         return activeNetworkInfo != null && activeNetworkInfo.isConnectedOrConnecting
+    }
+
+    private fun startChatService(context: Context) {
+        val serviceIntent = Intent(context, ChatForegroundService::class.java)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            context.startForegroundService(serviceIntent)
+        } else {
+            context.startService(serviceIntent)
+        }
     }
 }

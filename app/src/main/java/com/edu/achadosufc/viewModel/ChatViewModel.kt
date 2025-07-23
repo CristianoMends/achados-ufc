@@ -53,19 +53,19 @@ class ChatViewModel(
         }
     }
 
-    fun getChatHistory(otherUserId: Int) {
+    fun getChatHistory(otherUserId: Int, itemId: Int) {
         _isLoading.value = true
         _messages.value = emptyList()
         viewModelScope.launch {
-            chatSocketService.getChatHistory(otherUserId)
+            chatSocketService.getChatHistory(otherUserId, itemId)
             _isLoading.value = false
         }
     }
 
-    fun sendMessage(senderId: Int, recipientId: Int, text: String) {
+    fun sendMessage(senderId: Int, recipientId: Int, text: String, itemId: Int) {
         _isLoading.value = true
         if (text.isNotBlank()) {
-            chatSocketService.sendPrivateMessage(senderId, recipientId, text)
+            chatSocketService.sendPrivateMessage(senderId, recipientId, text, itemId)
 
             val currentUser = loginViewModel.loggedUser.value
             if (currentUser != null) {
@@ -73,6 +73,7 @@ class ChatViewModel(
                     id = Random.nextInt(Int.MIN_VALUE, 0),
                     text = text,
                     createdAt = Date(),
+                    itemId = itemId,
                     sender = UserResponse(
                         id = currentUser.id,
                         username = currentUser.username,

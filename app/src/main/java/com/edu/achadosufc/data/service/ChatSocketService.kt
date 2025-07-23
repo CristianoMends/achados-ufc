@@ -104,6 +104,9 @@ class ChatSocketService(private val context: Context) {
 
             for (i in 0 until dataArray.length()) {
                 val messageJson = dataArray.getJSONObject(i)
+
+                Log.d(TAG, "Processando mensagem $i: $messageJson")
+
                 val isRead = messageJson.optBoolean("isRead", false)
                 val senderJson = messageJson.getJSONObject("sender")
                 val sender = UserResponse(
@@ -124,8 +127,12 @@ class ChatSocketService(private val context: Context) {
                     phone = messageJson.getJSONObject("recipient").getString("phone"),
                     imageUrl = messageJson.getJSONObject("recipient").optString("imageUrl", "")
                 )
+
+                val itemId = messageJson.getJSONObject("item").getInt("id")
+
                 val dateFormat =
                     SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.getDefault())
+
                 val createdAt = dateFormat.parse(messageJson.getString("createdAt"))
 
                 val message = MessageResponse(
@@ -134,7 +141,8 @@ class ChatSocketService(private val context: Context) {
                     createdAt = createdAt,
                     sender = sender,
                     recipient = recipient,
-                    isRead = isRead
+                    isRead = isRead,
+                    itemId = itemId
                 )
                 //_incomingMessages.tryEmit(message)
                 messageList.add(message)
@@ -143,7 +151,7 @@ class ChatSocketService(private val context: Context) {
         }
         socket?.on("receivePrivateMessage") { args ->
             val data = args[0] as JSONObject
-            Log.d(TAG, "MENSAGEM PRIVADA RECEBIDA! Dados: $data")
+            Log.d(TAG, "MENSAGEM PRIVADA RECEBIDA!")
 
             val senderJson = data.getJSONObject("sender")
             val sender = UserResponse(
@@ -179,16 +187,23 @@ class ChatSocketService(private val context: Context) {
                 createdAt = createdAt,
                 sender = sender,
                 recipient = recipient,
-                isRead = data.optBoolean("isRead", false)
+                isRead = data.optBoolean("isRead", false),
+                itemId = data.getJSONObject("item").getInt("id")
             )
+            val itemName = data.getJSONObject("item").getString("title")
+            val itemImageUrl = data.getJSONObject("item").optString("imageUrl", "")
+            Log.d(TAG, "Mensagem recebida de ${message.sender.username} sobre o item ${itemName}: ${message.text}")
 
-            Log.d(TAG, "Mensagem recebida de ${message.sender.username}: ${message.text}")
-            sendNotification(message)
+            if (!isAppInForeground(context)) {
+                sendNotification(message,itemName, itemImageUrl)
+            } else {
+                Log.d(TAG, "App está em primeiro plano — não mostrar notificação.")
+            }
             _incomingMessages.tryEmit(message)
         }
     }
 
-    private fun sendNotification(message: MessageResponse) {
+    private fun sendNotification(message: MessageResponse, itemName: String, imageUrl: String) {
         Log.d(TAG, "Tentando criar notificação para a mensagem: ${message.text}")
 
         if (ActivityCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
@@ -196,33 +211,34 @@ class ChatSocketService(private val context: Context) {
             return
         }
 
-        // 1. Crie um Intent que abrirá a MainActivity
         val intent = Intent(context, MainActivity::class.java).apply {
-            // Limpa a pilha de atividades para que o botão "voltar" funcione como esperado
+
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
 
-            // 2. Adicione os dados do remetente como "extras" no Intent
             putExtra("chat_sender_id", message.sender.id)
-            putExtra("chat_sender_username", message.sender.username)
+            putExtra("chat_sender_name", message.sender.name)
             putExtra("chat_sender_photo_url", message.sender.imageUrl)
+            putExtra("chat_item_name", itemName)
+            putExtra("chat_item_photo_url", imageUrl)
+            putExtra("chat_item_id", message.itemId)
         }
 
-        // 3. Crie um PendingIntent que o sistema usará para lançar seu Intent
+
         val pendingIntent: PendingIntent = PendingIntent.getActivity(
             context,
-            message.sender.id, // Request code único por remetente
+            message.sender.id,
             intent,
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
 
-        // 4. Construa a notificação, agora com o PendingIntent
+
         val builder = NotificationCompat.Builder(context, "chat_messages_channel")
-            .setSmallIcon(R.drawable.brasao_vertical_cor) // Use um ícone branco e simples
-            .setContentTitle("Nova mensagem de ${message.sender.username}")
+            .setSmallIcon(R.drawable.brasao_vertical_cor)
+            .setContentTitle("Nova mensagem de ${message.sender.name}")
             .setContentText(message.text)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .setContentIntent(pendingIntent) // << Ação de clique definida aqui
-            .setAutoCancel(true) // Remove a notificação quando tocada
+            .setContentIntent(pendingIntent)
+            .setAutoCancel(true)
 
         with(NotificationManagerCompat.from(context)) {
             notify(message.sender.id, builder.build())
@@ -230,7 +246,7 @@ class ChatSocketService(private val context: Context) {
         }
     }
 
-    fun sendPrivateMessage(senderId: Int, recipientId: Int, text: String) {
+    fun sendPrivateMessage(senderId: Int, recipientId: Int, text: String, itemId:Int) {
         if (socket?.isActive != true) {
             Log.w(TAG, "Tentativa de enviar mensagem, mas o socket não está conectado.")
             return
@@ -239,15 +255,16 @@ class ChatSocketService(private val context: Context) {
             put("senderId", senderId)
             put("recipientId", recipientId)
             put("text", text)
+            put("itemId", itemId)
         }
-        Log.d(TAG, "Enviando mensagem privada de $senderId para o usuário $recipientId: $text")
+        Log.d(TAG, "Enviando mensagem privada de $senderId para o usuário $recipientId: $text sobre item $itemId")
         socket?.emit("sendPrivateMessage", payload)
     }
 
-    suspend fun getChatHistory(otherUserId: Int): Boolean {
+    fun getChatHistory(otherUserId: Int, itemId: Int): Boolean {
         CoroutineScope(Dispatchers.IO).launch {
             var attempts = 0
-            val maxAttempts = 10 // Tentar por no máximo 5 segundos (10 * 500ms)
+            val maxAttempts = 10
             while (socket?.isActive != true && attempts < maxAttempts) {
                 Log.w(
                     TAG,
@@ -267,6 +284,7 @@ class ChatSocketService(private val context: Context) {
             }
             val payload = JSONObject().apply {
                 put("otherUserId", otherUserId)
+                put("itemId", itemId)
             }
             Log.d(TAG, "Solicitando histórico de chat com o usuário $otherUserId")
             socket?.emit("getChatHistory", payload)
@@ -283,4 +301,20 @@ class ChatSocketService(private val context: Context) {
         _isConnected.value = false
         Log.d(TAG, "Socket desconectado e limpo.")
     }
+
+    fun isAppInForeground(context: Context): Boolean {
+        val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as android.app.ActivityManager
+        val appProcesses = activityManager.runningAppProcesses ?: return false
+
+        val packageName = context.packageName
+        for (appProcess in appProcesses) {
+            if (appProcess.importance == android.app.ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND &&
+                appProcess.processName == packageName
+            ) {
+                return true
+            }
+        }
+        return false
+    }
+
 }

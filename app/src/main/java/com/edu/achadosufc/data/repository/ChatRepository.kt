@@ -16,13 +16,11 @@ class ChatRepository(
     private val scope = CoroutineScope(Dispatchers.IO)
 
     init {
-        // Ouve continuamente por novas mensagens e salva no DB
         scope.launch {
             chatSocketService.incomingMessages.collect { message ->
                 saveMessage(message)
             }
         }
-        // Ouve pelo histórico e salva no DB
         scope.launch {
             chatSocketService.chatHistory.collect { history ->
                 saveMessageList(history)
@@ -30,24 +28,21 @@ class ChatRepository(
         }
     }
 
-    // O ViewModel vai observar este Flow para obter as mensagens
     fun getMessages(currentUserId: Int, otherUserId: Int): Flow<List<MessageEntity>> {
         return messageDao.getMessagesForChat(currentUserId, otherUserId)
     }
 
-    // A lógica principal: "buscar da rede somente se o DB estiver vazio"
-    suspend fun fetchHistoryFromServerIfEmpty(currentUserId: Int, otherUserId: Int) {
+    suspend fun fetchHistoryFromServerIfEmpty(currentUserId: Int, otherUserId: Int, itemId: Int) {
         val messageCount = messageDao.getMessageCountForChat(currentUserId, otherUserId)
         if (messageCount == 0) {
-            chatSocketService.getChatHistory(otherUserId)
+            chatSocketService.getChatHistory(otherUserId,itemId)
         }
     }
 
-    fun sendMessage(senderId: Int, recipientId: Int, text: String) {
-        chatSocketService.sendPrivateMessage(senderId, recipientId, text)
+    fun sendMessage(senderId: Int, recipientId: Int, text: String, itemId: Int) {
+        chatSocketService.sendPrivateMessage(senderId, recipientId, text, itemId)
     }
 
-    // Funções auxiliares para salvar e converter os dados
     private suspend fun saveMessageList(messages: List<MessageResponse>) {
         val entities = messages.map { it.toEntity() }
         messageDao.insertMessages(entities)
@@ -56,10 +51,11 @@ class ChatRepository(
     private suspend fun saveMessage(message: MessageResponse) {
         messageDao.insertMessages(listOf(message.toEntity()))
     }
+
+
 }
 
-// Função de extensão para converter o modelo da rede para o do DB
-fun MessageResponse.toEntity(): MessageEntity {
+private fun MessageResponse.toEntity(): MessageEntity {
     return MessageEntity(
         id = this.id!!,
         text = this.text,

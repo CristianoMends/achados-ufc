@@ -3,6 +3,7 @@ package com.edu.achadosufc
 import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
@@ -33,24 +34,26 @@ class MainActivity : ComponentActivity() {
             val themeViewModel: ThemeViewModel = koinViewModel()
             val themeMode by themeViewModel.themeMode.collectAsStateWithLifecycle()
             val navController = rememberNavController()
-
-            // Passo 1: Lide com o intent que INICIOU o app e o que chegou via onNewIntent
-            // Isso garante que tanto o primeiro clique quanto cliques subsequentes funcionem.
             val intentToHandle = newIntent ?: intent
 
-            // Passo 2: O LaunchedEffect garante que a navegação só ocorrerá APÓS a UI ser composta
             LaunchedEffect(intentToHandle) {
-                // Nossa função agora só extrai os dados e retorna a rota como String
                 fun getRouteFromIntent(intent: Intent?): String? {
                     val senderId = intent?.getIntExtra("chat_sender_id", -1) ?: -1
                     return if (senderId != -1) {
-                        val senderUsername = intent?.getStringExtra("chat_sender_username") ?: "Chat"
+                        val senderName = intent?.getStringExtra("chat_sender_name") ?: "Chat"
                         val senderPhotoUrl = intent?.getStringExtra("chat_sender_photo_url")
+
+                        val itemId = intent?.getIntExtra("chat_item_id", -1) ?: -1
+                        val itemName = intent?.getStringExtra("chat_item_name") ?: "Item"
+                        val itemPhotoUrl = intent?.getStringExtra("chat_item_photo_url")
 
                         Screen.Chat.createRoute(
                             recipientId = senderId,
-                            recipientUsername = senderUsername,
-                            photoUrl = senderPhotoUrl
+                            recipientUsername = senderName,
+                            recipientPhotoUrl = senderPhotoUrl,
+                            itemName = itemName,
+                            itemPhotoUrl = itemPhotoUrl,
+                            itemId = itemId
                         )
                     } else {
                         null
@@ -59,17 +62,17 @@ class MainActivity : ComponentActivity() {
 
                 getRouteFromIntent(intentToHandle)?.let { route ->
                     navController.navigate(route)
-                    // Limpa o intent após a navegação para evitar re-navegar em recomposições
+
                     newIntent = null
                     setIntent(null)
                 }
             }
 
-            // A chamada para criar os canais continua aqui
+
             createNotificationChannels()
 
             AchadosUFCTheme(themeMode = themeMode) {
-                // O AppNavHost será composto, configurando o gráfico no navController
+
                 AppNavHost(
                     navController = navController
                 )
@@ -86,7 +89,7 @@ class MainActivity : ComponentActivity() {
         val notificationManager: NotificationManager =
             getSystemService(NOTIFICATION_SERVICE) as NotificationManager
 
-        // Canal para Lembretes de Itens
+
         val itemChannel = NotificationChannel(
             "item_reminder_channel",
             "Lembretes de Itens",
@@ -97,7 +100,7 @@ class MainActivity : ComponentActivity() {
         notificationManager.createNotificationChannel(itemChannel)
 
 
-        // Canal para mensagens de chat
+
         val chatChannel = NotificationChannel(
             "chat_messages_channel",
             "Novas Mensagens",
@@ -106,6 +109,7 @@ class MainActivity : ComponentActivity() {
             description = "Notificações para novas mensagens recebidas no chat."
         }
         notificationManager.createNotificationChannel(chatChannel)
+
     }
 
 
@@ -113,14 +117,14 @@ class MainActivity : ComponentActivity() {
         ActivityResultContracts.RequestPermission()
     ) { isGranted: Boolean ->
         if (isGranted) {
-            // Permissão concedida
+
         } else {
 
         }
     }
 
     private fun askNotificationPermission() {
-        // Só é necessário no Android 13 (TIRAMISU) ou superior
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
         }

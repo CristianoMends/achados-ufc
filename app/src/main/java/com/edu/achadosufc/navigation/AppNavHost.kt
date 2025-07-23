@@ -1,5 +1,6 @@
 package com.edu.achadosufc.navigation
 
+import android.util.Log
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -73,22 +74,34 @@ fun AppNavHost(
                 navArgument("recipientPhotoUrl") {
                     type = NavType.StringType
                     nullable = true
-                }
+                },
+                navArgument("itemPhotoUrl") {
+                    type = NavType.StringType
+                    nullable = true
+                },
+                navArgument("itemName") {
+                    type = NavType.StringType
+                },
+                navArgument("itemId") { type = NavType.IntType }
             )
         ) { backStackEntry ->
             val recipientId = backStackEntry.arguments?.getInt("recipientId") ?: -1
             val recipientUsername = backStackEntry.arguments?.getString("recipientUsername") ?: ""
-            val recipientPhotoUrl = backStackEntry.arguments?.getString("recipientPhotoUrl")
+            val itemPhotoUrl = backStackEntry.arguments?.getString("itemPhotoUrl")
+            val itemName = backStackEntry.arguments?.getString("itemName") ?: ""
+            val itemId = backStackEntry.arguments?.getInt("itemId") ?: -1
 
-
-            if (recipientId != -1 && recipientUsername.isNotEmpty()) {
+            if (recipientId != -1 && recipientUsername.isNotEmpty() && itemName.isNotEmpty() && itemId != -1) {
                 ChatScreen(
                     navController = navController,
                     chatViewModel = koinViewModel(),
                     loginViewModel = koinViewModel(),
                     recipientId = recipientId,
                     recipientUsername = recipientUsername,
-                    recipientPhotoUrl = recipientPhotoUrl
+                    itemPhotoUrl = itemPhotoUrl,
+                    itemName = itemName,
+                    itemId = itemId
+
                 )
             } else {
                 Text(text = "Erro: Destinatário inválido.")

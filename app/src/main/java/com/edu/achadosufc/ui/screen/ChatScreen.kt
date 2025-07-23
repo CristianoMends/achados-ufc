@@ -68,7 +68,10 @@ fun ChatScreen(
     loginViewModel: LoginViewModel,
     recipientId: Int,
     recipientUsername: String,
-    recipientPhotoUrl: String?
+
+    itemId: Int,
+    itemPhotoUrl: String?,
+    itemName: String
 ) {
     val messages by chatViewModel.messages.collectAsStateWithLifecycle()
     var textState by remember { mutableStateOf("") }
@@ -84,7 +87,7 @@ fun ChatScreen(
     }
 
     LaunchedEffect(recipientId) {
-        chatViewModel.getChatHistory(recipientId)
+        chatViewModel.getChatHistory(recipientId, itemId)
     }
 
     LaunchedEffect(messages.size) {
@@ -97,7 +100,8 @@ fun ChatScreen(
         topBar = {
             ChatTopBar(
                 recipientUsername = recipientUsername,
-                recipientPhotoUrl = recipientPhotoUrl,
+                itemPhotoUrl = itemPhotoUrl,
+                itemName = itemName,
                 onBackClick = { navController.popBackStack() }
             )
         },
@@ -132,12 +136,18 @@ fun ChatScreen(
                         }
                     }
 
-                Text("Id do destinatário: $recipientId")
                 ChatInputBar(
                     text = textState,
                     onTextChange = { newText -> textState = newText },
                     onSendClick = {
-                        loggedUser?.let { chatViewModel.sendMessage(it.id, recipientId, textState) }
+                        loggedUser?.let {
+                            chatViewModel.sendMessage(
+                                it.id,
+                                recipientId,
+                                textState,
+                                itemId
+                            )
+                        }
                         textState = ""
                     }
                 )
@@ -151,7 +161,8 @@ fun ChatScreen(
 @Composable
 fun ChatTopBar(
     recipientUsername: String,
-    recipientPhotoUrl: String?,
+    itemPhotoUrl: String?,
+    itemName: String,
     onBackClick: () -> Unit
 ) {
     TopAppBar(
@@ -159,23 +170,25 @@ fun ChatTopBar(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 AsyncImage(
                     model = ImageRequest.Builder(LocalContext.current)
-                        .data(recipientPhotoUrl)
+                        .data(itemPhotoUrl)
                         .crossfade(true)
                         .build(),
                     placeholder = painterResource(id = R.drawable.brasao_vertical_cor),
                     error = painterResource(id = R.drawable.brasao_vertical_cor),
-                    contentDescription = "Foto de perfil de $recipientUsername",
+                    contentDescription = "Foto do item $itemName",
                     contentScale = ContentScale.Crop,
                     modifier = Modifier
                         .size(42.dp)
-                        .clip(CircleShape)
+                        .clip(RoundedCornerShape(8.dp)) // Changed to rounded corners for item image
                 )
                 Spacer(modifier = Modifier.width(12.dp))
                 Column {
-                    Text(text = recipientUsername, style = MaterialTheme.typography.titleMedium)
-
                     Text(
-                        text = "🟢 Online",
+                        text = itemName,
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                    Text(
+                        text = "Conversando com $recipientUsername",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
