@@ -47,7 +47,7 @@ fun AuthorInfoCard(
             Column {
                 Row {
                     Text(
-                        text = if (isOwner) "Você" else (user.name ?: user.username),
+                        text = if (isOwner) "Você" else (user.name),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )

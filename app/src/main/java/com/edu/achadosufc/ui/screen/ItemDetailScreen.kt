@@ -118,7 +118,7 @@ fun ItemDetailScreen(
                             navController.navigate(
                                 Screen.Chat.createRoute(
                                     recipientId = item!!.user.id,
-                                    recipientUsername = item!!.user.username,
+                                    recipientUsername = item!!.user.name,
                                     photoUrl = item!!.user.imageUrl
                                 )
                             )

@@ -76,7 +76,6 @@ fun ReportItemScreen(
     var description by rememberSaveable { mutableStateOf("") }
     var selectedLocation by rememberSaveable { mutableStateOf("") }
 
-
     val locations = listOf(
         "BLOCO 01 - Sala de Aula 01",
         "BLOCO 01 - Sala de Aula 02",
@@ -181,7 +180,7 @@ fun ReportItemScreen(
     val currentRoute = navBackStackEntry?.destination?.route
 
     var selectedImageUri by rememberSaveable { mutableStateOf<Uri?>(null) }
-    var isLost by rememberSaveable { mutableStateOf(true) }
+    var isFound by rememberSaveable { mutableStateOf(true) }
 
     var showDialog by remember { mutableStateOf(false) }
     val isLoading by reportViewModel.isLoading.collectAsState()
@@ -228,7 +227,7 @@ fun ReportItemScreen(
             description = ""
             selectedLocation = ""
             selectedImageUri = null
-            isLost = true
+            isFound = true
         }
     }
 
@@ -348,9 +347,12 @@ fun ReportItemScreen(
             ) {
                 OutlinedTextField(
                     value = selectedLocation,
-                    onValueChange = { /* Não é editável, então não faz nada */ },
+                    onValueChange = {
+                        selectedLocation = it
+                        expanded = true // Manter o menu aberto ao digitar
+                    },
                     label = { Text("Localização") },
-                    readOnly = true,
+                    readOnly = false, // Permitir digitação
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
                     modifier = Modifier
                         .menuAnchor()
@@ -365,21 +367,25 @@ fun ReportItemScreen(
                     modifier = Modifier.fillMaxWidth()
                         .heightIn(max = 300.dp)
                 ) {
-
-                    locations.forEach { locationOption ->
-                        DropdownMenuItem(
-                            text = { Text(locationOption) },
-                            onClick = {
-                                selectedLocation = locationOption
-                                expanded = false
-                            }
-                        )
+                    val filteredLocations = locations.filter {
+                        it.contains(selectedLocation, ignoreCase = true)
+                    }
+                    if (filteredLocations.isNotEmpty()) {
+                        filteredLocations.forEach { locationOption ->
+                            DropdownMenuItem(
+                                text = { Text(locationOption) },
+                                onClick = {
+                                    selectedLocation = locationOption
+                                    expanded = false
+                                }
+                            )
+                        }
                     }
                 }
             }
 
 
-            SegmentedButtonControl(isLost = isLost, onOptionSelected = { isLost = it })
+            SegmentedButtonControl(isLost = isFound, onOptionSelected = { isFound = it })
 
             ImageSelector(
                 selectedImageUri = selectedImageUri,
@@ -398,7 +404,7 @@ fun ReportItemScreen(
                         title = title,
                         description = description,
                         location = selectedLocation,
-                        isFound = isLost,
+                        isFound = isFound,
                         imageUri = selectedImageUri
                     )
                 },

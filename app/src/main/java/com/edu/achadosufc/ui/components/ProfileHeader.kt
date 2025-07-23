@@ -60,7 +60,7 @@ fun ProfileHeader(
             fontWeight = FontWeight.Bold
         )
         Text(
-            text = user.username,
+            text = user.email,
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )

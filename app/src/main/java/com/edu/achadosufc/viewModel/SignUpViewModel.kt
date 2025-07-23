@@ -22,9 +22,6 @@ class SignUpViewModel(
     private val loginViewModel: LoginViewModel
 ) : ViewModel() {
 
-    private val _username = MutableStateFlow("")
-    val username: StateFlow<String> = _username
-
     private val _name = MutableStateFlow("")
     val name: StateFlow<String> = _name
 
@@ -63,10 +60,6 @@ class SignUpViewModel(
 
     fun clearErrorMessage() {
         _error.value = null
-    }
-
-    fun onUsernameChanged(value: String) {
-        _username.value = value; _error.value = null
     }
 
     fun onNameChanged(value: String) {
@@ -130,7 +123,7 @@ class SignUpViewModel(
 
 
     fun signUp() {
-        if (_username.value.isBlank() || _name.value.isBlank() ||
+        if (_name.value.isBlank() ||
             _email.value.isBlank() || _password.value.isBlank() ||
             _confirmPassword.value.isBlank()
         ) {
@@ -174,7 +167,7 @@ class SignUpViewModel(
                 }
 
                 val userRequest = UserRequest(
-                    username = _username.value,
+                    username = null,
                     name = _name.value[0].uppercaseChar() + _name.value.substring(1),
                     surname = if (_surname.value.isBlank()) null else _surname.value[0].uppercaseChar() + _surname.value.substring(
                         1
@@ -188,14 +181,12 @@ class SignUpViewModel(
                 val registeredUser = userRepository.createUser(userRequest)
                 if (registeredUser != null) {
                     _signUpSuccess.value = true
-                    loginViewModel.saveUserIdOnSession(registeredUser.id)
-
                 } else {
                     _error.value = "Falha no cadastro: Resposta do servidor vazia."
                 }
 
             } catch (e: Exception) {
-                _error.value = "Erro ao cadastrar: ${e.message ?: "Ocorreu um erro desconhecido."}"
+                _error.value = "Erro ao criar conta"
             } finally {
                 _loading.value = false
             }

@@ -113,7 +113,6 @@ fun ChatScreen(
                         message = "Carregando histórico de mensagens...",
                     )
                 } else
-
                     if (messages.isEmpty()) {
                         EmptyChatContent(modifier = Modifier.weight(1f))
                     } else {
@@ -132,6 +131,8 @@ fun ChatScreen(
                             }
                         }
                     }
+
+                Text("Id do destinatário: $recipientId")
                 ChatInputBar(
                     text = textState,
                     onTextChange = { newText -> textState = newText },

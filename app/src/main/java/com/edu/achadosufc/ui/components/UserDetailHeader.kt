@@ -52,7 +52,7 @@ fun UserDetailHeader(
         }
         Spacer(modifier = Modifier.height(16.dp))
         Text(
-            text = user.name ?: user.username,
+            text = user.name,
             style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.Bold
         )

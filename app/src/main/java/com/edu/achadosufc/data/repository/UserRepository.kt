@@ -25,7 +25,7 @@ class UserRepository(
         return userDao.getUserByUsername(username).map { it?.toUserResponse() }
     }
 
-    suspend fun clearLocalDatabase(){
+    suspend fun clearLocalDatabase() {
         try {
             userDao.clearAllUsers()
         } catch (e: Exception) {
@@ -34,7 +34,7 @@ class UserRepository(
         }
     }
 
-    suspend fun fetchUserByEmailAndSave(email: String){
+    suspend fun fetchUserByEmailAndSave(email: String) {
         try {
             val response = apiService.getUserByEmail(email)
             if (response.isSuccessful) {
@@ -92,11 +92,10 @@ class UserRepository(
     }
 
 
-
     suspend fun fetchUserByUsernameAndSave(username: String): UserResponse? {
         try {
 
-            val response = apiService.getUserByUsername(username)
+            val response = apiService.getUserByEmail(username)
             if (response.isSuccessful) {
                 val userFromApi = response.body()
                 userFromApi?.let {
@@ -118,24 +117,18 @@ class UserRepository(
     }
 
 
-
     suspend fun createUser(userRequest: UserRequest): UserResponse? {
-        try {
 
-            val response = apiService.createUser(userRequest)
-            if (response.isSuccessful) {
-                val createdUser = response.body()
-                createdUser?.let {
-                    userDao.insertUser(it.toUserEntity())
-
-                }
-                return createdUser
-            } else {
-                val errorBody = response.errorBody()?.string()
-                throw HttpException(response)
+        val response = apiService.createUser(userRequest)
+        if (response.isSuccessful) {
+            val createdUser = response.body()
+            createdUser?.let {
+                userDao.insertUser(it.toUserEntity())
             }
-        } catch (e: Exception) {
-            throw e
+            return createdUser
+        } else {
+            val errorBody = response.errorBody()?.string()
+            throw HttpException(response)
         }
     }
 }

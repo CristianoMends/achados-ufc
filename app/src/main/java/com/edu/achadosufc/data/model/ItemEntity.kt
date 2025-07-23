@@ -16,7 +16,7 @@ data class ItemEntity(
     val userId: Int,
 
 
-    val userUsername: String,
+    val userUsername: String?,
     val userEmail: String,
     val userImageUrl: String?,
     val userName: String,

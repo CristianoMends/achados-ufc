@@ -14,7 +14,7 @@ data class MessageEntity(
     val isRead: Boolean,
 
     val senderId: Int,
-    val senderUsername: String,
+    val senderUsername: String?,
     val senderImageUrl: String?,
 
     val recipientId: Int

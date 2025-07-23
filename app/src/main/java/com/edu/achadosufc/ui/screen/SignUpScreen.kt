@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -44,9 +45,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
@@ -66,19 +69,18 @@ fun SignUpScreen(
     themeViewModel: ThemeViewModel
 
 ) {
-    val username by signUpViewModel.username.collectAsStateWithLifecycle()
     val name by signUpViewModel.name.collectAsStateWithLifecycle()
     val surname by signUpViewModel.surname.collectAsStateWithLifecycle()
     val email by signUpViewModel.email.collectAsStateWithLifecycle()
     val password by signUpViewModel.password.collectAsStateWithLifecycle()
     val confirmPassword by signUpViewModel.confirmPassword.collectAsStateWithLifecycle()
     val phone by signUpViewModel.phone.collectAsStateWithLifecycle()
-
     val isLoading by signUpViewModel.loading.collectAsStateWithLifecycle()
     val errorMessage by signUpViewModel.error.collectAsStateWithLifecycle()
     val signUpSuccess by signUpViewModel.signUpSuccess.collectAsStateWithLifecycle()
     var passwordVisible by remember { mutableStateOf(false) }
 
+    val focusManager = LocalFocusManager.current
 
     val selectedImageUri by signUpViewModel.selectedImageUri.collectAsStateWithLifecycle()
 
@@ -131,11 +133,10 @@ fun SignUpScreen(
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     if (errorMessage != null) {
-                        Text(
-                            text = "Erro: $errorMessage",
-                            color = MaterialTheme.colorScheme.error,
-                            style = MaterialTheme.typography.bodyLarge,
-                            modifier = Modifier.padding(bottom = 16.dp)
+                        MessageDialog(
+                            title = "Erro",
+                            message = "$errorMessage",
+                            confirmButtonAction = { signUpViewModel.clearErrorMessage() }
                         )
                     } else if (signUpSuccess) {
                         MessageDialog(
@@ -193,27 +194,25 @@ fun SignUpScreen(
                             Spacer(modifier = Modifier.height(16.dp))
 
                             OutlinedTextField(
-                                value = username,
-                                onValueChange = { signUpViewModel.onUsernameChanged(it) },
-                                label = { Text("Nome de Usuário*") },
-                                modifier = Modifier.fillMaxWidth(),
-                                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next)
-                            )
-
-                            OutlinedTextField(
                                 value = name,
                                 onValueChange = { signUpViewModel.onNameChanged(it) },
                                 label = { Text("Nome*") },
                                 modifier = Modifier.fillMaxWidth(),
-                                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next)
+                                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                                keyboardActions = KeyboardActions(
+                                    onNext = { focusManager.moveFocus(FocusDirection.Down) }
+                                )
                             )
 
                             OutlinedTextField(
                                 value = surname,
                                 onValueChange = { signUpViewModel.onSurnameChanged(it) },
                                 label = { Text("Sobrenome (Opcional)") },
-                                modifier = Modifier.fillMaxWidth(),
-                                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next)
+                                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                                keyboardActions = KeyboardActions(
+                                    onNext = { focusManager.moveFocus(FocusDirection.Down) }
+                                ),
+                                modifier = Modifier.fillMaxWidth()
                             )
 
                             OutlinedTextField(
@@ -224,6 +223,9 @@ fun SignUpScreen(
                                 keyboardOptions = KeyboardOptions(
                                     keyboardType = KeyboardType.Email,
                                     imeAction = ImeAction.Next
+                                ),
+                                keyboardActions = KeyboardActions(
+                                    onNext = { focusManager.moveFocus(FocusDirection.Down) }
                                 )
                             )
 
@@ -235,6 +237,9 @@ fun SignUpScreen(
                                 keyboardOptions = KeyboardOptions(
                                     keyboardType = KeyboardType.Phone,
                                     imeAction = ImeAction.Next
+                                ),
+                                keyboardActions = KeyboardActions(
+                                    onNext = { focusManager.moveFocus(FocusDirection.Down) }
                                 )
                             )
 
@@ -262,6 +267,9 @@ fun SignUpScreen(
                                 keyboardOptions = KeyboardOptions(
                                     keyboardType = KeyboardType.Password,
                                     imeAction = ImeAction.Next
+                                ),
+                                keyboardActions = KeyboardActions(
+                                    onNext = { focusManager.moveFocus(FocusDirection.Down) }
                                 )
                             )
 
@@ -289,6 +297,9 @@ fun SignUpScreen(
                                 keyboardOptions = KeyboardOptions(
                                     keyboardType = KeyboardType.Password,
                                     imeAction = ImeAction.Done
+                                ),
+                                keyboardActions = KeyboardActions(
+                                    onDone = { signUpViewModel.signUp() }
                                 )
                             )
 

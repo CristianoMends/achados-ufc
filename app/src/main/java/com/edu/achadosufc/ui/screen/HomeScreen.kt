@@ -120,7 +120,7 @@ fun HomeScreen(
                         if (allItems.isEmpty() && !isLoading) {
                             item {
                                 Text(
-                                    "Nenhum item disponível no momento.",
+                                    "Nenhuma publicação.",
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .padding(16.dp),

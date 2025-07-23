@@ -24,17 +24,12 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
-import com.edu.achadosufc.data.model.Item
-import com.edu.achadosufc.data.model.UserResponse
 import com.edu.achadosufc.ui.components.AppTopBar
 import com.edu.achadosufc.ui.components.PostGridItem
 import com.edu.achadosufc.ui.components.UserDetailHeader
@@ -48,15 +43,14 @@ fun UserDetailScreen(
     userViewModel: UserViewModel,
     themeViewModel: ThemeViewModel
 ) {
-    var user by remember { mutableStateOf<UserResponse?>(null) }
-    var userItems by remember { mutableStateOf<List<Item>?>(null) }
+    val user by userViewModel.selectedUser.collectAsStateWithLifecycle()
+    val userItems by userViewModel.userItems.collectAsStateWithLifecycle()
     val isLoading by userViewModel.isLoading.collectAsStateWithLifecycle()
     val errorMessage by userViewModel.errorMessage.collectAsStateWithLifecycle()
 
     LaunchedEffect(userId) {
         if (userId != -1) {
-            user = userViewModel.getUserById(userId)
-            userItems = userViewModel.getItemsByUserId(userId)
+            userViewModel.getUserDetailsAndItems(userId)
         } else {
             userViewModel.setErrorMessage("ID do usuário inválido.")
         }
@@ -65,10 +59,13 @@ fun UserDetailScreen(
     Scaffold(
         topBar = {
             AppTopBar(
-                title = user?.username ?: "Perfil",
+                title = user?.name ?: "Perfil",
                 showBackButton = true,
                 themeViewModel = themeViewModel,
-                onBackClick = { navController.popBackStack() }
+                onBackClick = {
+                    userViewModel.clearSelectedUser()
+                    navController.popBackStack()
+                }
             )
         }
     ) { padding ->
@@ -100,18 +97,16 @@ fun UserDetailScreen(
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     item(span = { GridItemSpan(maxLineSpan) }) {
-                        user?.let { currentUser ->
-                            userItems?.let {
-                                UserDetailHeader(
-                                    user = user!!,
-                                    postCount = it.size,
-                                )
-                            }
+                        user?.let {
+                            UserDetailHeader(
+                                user = user!!,
+                                postCount = userItems.size,
+                            )
                         }
                     }
 
-                    if (userItems?.isNotEmpty() == true) {
-                        items(userItems!!) { item ->
+                    if (userItems.isNotEmpty()) {
+                        items(userItems) { item ->
                             PostGridItem(item = item, onClick = {
                                 navController.navigate(Screen.ItemDetail.createRoute(item.id))
                             })

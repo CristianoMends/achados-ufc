@@ -101,7 +101,15 @@ class LoginViewModel(
 
     }
 
-    fun loginWithGoogle(idToken: String) {
+    suspend fun loginWithGoogle(idToken: String) {
+        logoutOnFirebase()
+
+        if (!isInternetAvailable()){
+            _error.value = "Sem conexão com a internet. Verifique sua conexão e tente novamente."
+            _confirmButtonAction.value = { clearErrorMessage() }
+            return
+        }
+
         _loading.value = true
         viewModelScope.launch {
             try {
@@ -122,9 +130,11 @@ class LoginViewModel(
                     chatSocketService.connect()
                 } else {
                     _error.value = "Falha ao autenticar com o Google no servidor."
+                    logoutOnFirebase()
                 }
             } catch (e: Exception) {
-                _error.value = "Erro no login com Google: ${e.message}"
+                _error.value = "Erro no login com Google"
+                logoutOnFirebase()
             } finally {
                 _loading.value = false
             }
@@ -169,7 +179,8 @@ class LoginViewModel(
         return loginRepository.getGoogleSignInClient(context)
     }
 
-    fun login() {
+    suspend fun login() {
+        logoutOnFirebase()
         if (_email.value.isBlank() || _password.value.isBlank()) {
             _error.value = "Preencha todos os campos"
             _confirmButtonAction.value = { clearErrorMessage() }
@@ -217,7 +228,7 @@ class LoginViewModel(
 
             } catch (e: retrofit2.HttpException) {
                 if (e.code() >= 500) {
-                    _error.value = "Servidor indisponível. Tente novamente mais tarde."
+                    _error.value = "Servidor indisponível. Tente novamente mais tarde. ${e.code()} ${e.message()}"
                     _confirmButtonAction.value = { clearErrorMessage() }
                 } else {
                     _error.value = "Erro ao tentar fazer login: ${e.message()}"
@@ -252,14 +263,7 @@ class LoginViewModel(
 
 
     suspend fun logout() {
-        FirebaseAuth.getInstance().signOut()
-        try {
-            val googleSignInClient = loginRepository.getGoogleSignInClient(context)
-            googleSignInClient.signOut().await()
-        } catch (e: Exception) {
-            Log.e("LoginViewModel", "Erro ao fazer signOut do Google", e)
-        }
-
+        logoutOnFirebase()
         chatSocketService.disconnect()
         sessionManager.clearSession()
         userPreferencesRepository.clearUserId()
@@ -270,6 +274,16 @@ class LoginViewModel(
         _loading.value = false
         _isAutoLoginCheckComplete.value = true
         clearLoginFields()
+    }
+
+    private suspend fun logoutOnFirebase(){
+        FirebaseAuth.getInstance().signOut()
+        try {
+            val googleSignInClient = loginRepository.getGoogleSignInClient(context)
+            googleSignInClient.signOut().await()
+        } catch (e: Exception) {
+            Log.e("LoginViewModel", "Erro ao fazer signOut do Google", e)
+        }
     }
 
     private fun isInternetAvailable(): Boolean {
