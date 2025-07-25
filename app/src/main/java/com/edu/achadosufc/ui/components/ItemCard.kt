@@ -45,11 +45,7 @@ fun ItemCard(
         modifier = Modifier
             .padding(vertical = 8.dp, horizontal = 0.dp)
             .fillMaxWidth()
-            .wrapContentHeight(  )
-            .border(
-                1.dp,
-                MaterialTheme.colorScheme.outlineVariant
-            ),
+            .wrapContentHeight(),
         onClick = {
 
         },
@@ -66,8 +62,7 @@ fun ItemCard(
             Row(
                 modifier = Modifier.fillMaxWidth().padding(12.dp),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
-
+                horizontalArrangement = Arrangement.SpaceBetween
 
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -110,7 +105,6 @@ fun ItemCard(
                         )
                     }
                 }
-                StatusTag(item.isFound)
             }
 
             Spacer(modifier = Modifier.height(12.dp))

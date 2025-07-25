@@ -11,16 +11,15 @@ import com.edu.achadosufc.data.model.UserResponse
 import com.edu.achadosufc.data.repository.LoginRepository
 import com.edu.achadosufc.data.UserPreferences
 import com.edu.achadosufc.data.repository.UserRepository
-import com.edu.achadosufc.data.service.ChatSocketService
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.messaging.FirebaseMessaging
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
-import org.koin.core.context.GlobalContext
 
 class LoginViewModel(
 
@@ -29,8 +28,6 @@ class LoginViewModel(
     private val userPreferencesRepository: UserPreferences,
     private val context: Context
 ) : ViewModel() {
-
-    private val chatSocketService = GlobalContext.get().get<ChatSocketService>()
 
     private val sessionManager: SessionManager = SessionManager(context)
     private val _loggedUser = MutableStateFlow<UserResponse?>(null)
@@ -53,7 +50,6 @@ class LoginViewModel(
         viewModelScope.launch {
             val initialUserId = userPreferencesRepository.userId.first()
 
-
             if (initialUserId != null) {
                 _loading.value = true
                 try {
@@ -61,8 +57,6 @@ class LoginViewModel(
                         ?: throw Exception("Usuário não encontrado no servidor.")
 
                     _loggedUser.value = userRemote
-                    chatSocketService.connect()
-
                 } catch (e: retrofit2.HttpException) {
                     if (e.code() >= 500) {
                         _error.value = "Servidor indisponível. Tente novamente mais tarde."
@@ -121,13 +115,19 @@ class LoginViewModel(
                     userRepository.fetchUserByEmailAndSave(firebaseUser?.email ?: "")
 
                     val user = userRepository.getUserByEmailLocal(firebaseUser?.email ?: "")
-
                     _loggedUser.value = user
                     if (user != null) {
                         sessionManager.saveUserLoggedIn(user.id)
                         userPreferencesRepository.saveUserId(user.id)
+
+                        FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
+                            if (task.isSuccessful) {
+                                val token = task.result
+                                Log.d("FCM", "Token: $token")
+                            }
+                        }
+
                     }
-                    chatSocketService.connect()
                 } else {
                     _error.value = "Falha ao autenticar com o Google no servidor."
                     logoutOnFirebase()
@@ -208,7 +208,6 @@ class LoginViewModel(
                         sessionManager.saveAuthToken(res.access_token)
                         sessionManager.saveUserLoggedIn(user.id)
                         userPreferencesRepository.saveUserId(user.id)
-                        chatSocketService.connect()
                     } else {
                         _error.value = "Login bem-sucedido, mas dados do usuário não encontrados."
                         _confirmButtonAction.value = { clearErrorMessage() }
@@ -264,7 +263,6 @@ class LoginViewModel(
 
     suspend fun logout() {
         logoutOnFirebase()
-        chatSocketService.disconnect()
         sessionManager.clearSession()
         userPreferencesRepository.clearUserId()
 

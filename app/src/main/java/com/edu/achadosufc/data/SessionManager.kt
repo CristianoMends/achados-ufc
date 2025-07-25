@@ -27,10 +27,6 @@ class SessionManager(context: Context) {
         }
     }
 
-    fun saveExpirationTime(expirationTimeInMillis: Long) {
-        prefs.edit { putLong(TOKEN_EXPIRATION_TIME, expirationTimeInMillis) }
-    }
-
     fun isTokenExpired(): Boolean {
         return false
     }

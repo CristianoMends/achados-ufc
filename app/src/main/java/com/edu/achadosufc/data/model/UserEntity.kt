@@ -12,7 +12,7 @@ data class UserEntity(
     val imageUrl: String?,
     val name: String,
     val phone: String?,
-    val surname: String?
+    val surname: String?,
 )
 
 fun UserResponse.toUserEntity(): UserEntity {
@@ -23,7 +23,7 @@ fun UserResponse.toUserEntity(): UserEntity {
         imageUrl = this.imageUrl,
         name = this.name,
         phone = this.phone,
-        surname = this.surname
+        surname = this.surname,
     )
 }
 
@@ -35,6 +35,6 @@ fun UserEntity.toUserResponse(): UserResponse {
         imageUrl = this.imageUrl,
         name = this.name,
         phone = this.phone,
-        surname = this.surname
+        surname = this.surname,
     )
 }

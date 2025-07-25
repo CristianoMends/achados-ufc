@@ -8,5 +8,4 @@ data class UserResponse(
     val phone: String?,
     val imageUrl: String?,
     val surname: String?
-
 )

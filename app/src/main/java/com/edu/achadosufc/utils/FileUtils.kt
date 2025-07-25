@@ -28,6 +28,17 @@ class FileUtils {
             return MultipartBody.Part.createFormData("file", imageFile.name, requestFile)
         }
 
+        fun getFileFromUri(uri: Uri, context: Context): File {
+            val inputStream: InputStream? = context.contentResolver.openInputStream(uri)
+            val tempFile = File(context.cacheDir, "temp_image_${System.currentTimeMillis()}.jpeg")
+            inputStream?.use { input ->
+                tempFile.outputStream().use { output ->
+                    input.copyTo(output)
+                }
+            }
+            return tempFile
+        }
+
 
         private fun convertBitmapToFile(context: Context, bitmap: Bitmap): File {
             val tempFile = File(context.cacheDir, "temp_image_${System.currentTimeMillis()}.jpeg")

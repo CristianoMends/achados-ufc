@@ -16,9 +16,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import com.edu.achadosufc.R
 import com.edu.achadosufc.data.model.UserResponse
 
 
@@ -42,6 +44,8 @@ fun AuthorInfoCard(
                 model = user.imageUrl,
                 contentDescription = "Foto de ${user.name}",
                 modifier = Modifier.size(48.dp).clip(CircleShape),
+                placeholder = painterResource(id = R.drawable.portrait_placeholder),
+                error = painterResource(id = R.drawable.portrait_placeholder),
                 contentScale = ContentScale.Crop
             )
             Column {

@@ -7,11 +7,11 @@ import org.koin.android.ext.koin.androidContext
 import org.koin.dsl.module
 
 val repositoryModule = module {
-    single { UserRepository(get(), get()) }
+    single { UserRepository(get(), get(), get()) }
     single { LoginRepository(androidContext(), get()) }
     single { UserPreferences(androidContext()) }
     single { FileRepository(get()) }
     single { ItemRepository(get(), get()) }
     single { SessionManager(androidContext()) }
-    single { ChatRepository(get(), get()) }
+    single { ChatRepository(get(), get())}
 }

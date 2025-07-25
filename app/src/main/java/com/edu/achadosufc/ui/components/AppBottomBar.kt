@@ -4,10 +4,15 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.AddCircle
+import androidx.compose.material.icons.filled.ChatBubble
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.outlined.AddCircle
+import androidx.compose.material.icons.outlined.ChatBubbleOutline
+import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -32,8 +37,13 @@ fun AppBottomBar(
         modifier = modifier
     ) {
         NavigationBarItem(
-            icon = { Icon(Icons.Default.Home, contentDescription = "Início") },
-            label = {  },
+            icon = {
+                if (currentRoute == Screen.Home.route)
+                    Icon(Icons.Filled.Home, contentDescription = "Início")
+                else
+                    Icon(Icons.Outlined.Home, contentDescription = "Início")
+            },
+            label = { },
             selected = currentRoute == Screen.Home.route,
             onClick = {
                 if (currentRoute != Screen.Home.route) {
@@ -48,8 +58,12 @@ fun AppBottomBar(
             }
         )
         NavigationBarItem(
-            icon = { Icon(Icons.Default.Search, contentDescription = "Buscar") },
-            label = {  },
+            icon = {
+                if (currentRoute == Screen.Search.route)
+                    Icon(Icons.Filled.Search, contentDescription = "Busca")
+                else
+                    Icon(Icons.Outlined.Search, contentDescription = "Busca")
+            },            label = { },
             selected = currentRoute == Screen.Search.route,
             onClick = {
                 if (currentRoute != Screen.Search.route) {
@@ -64,8 +78,12 @@ fun AppBottomBar(
             }
         )
         NavigationBarItem(
-            icon = { Icon(Icons.Default.Add, contentDescription = "Publicar") },
-            label = {  },
+            icon = {
+                if (currentRoute == Screen.ReportItem.route)
+                    Icon(Icons.Filled.AddCircle, contentDescription = "Publicar")
+                else
+                    Icon(Icons.Outlined.AddCircle, contentDescription = "Publicar")
+            },            label = { },
             selected = currentRoute == Screen.ReportItem.route,
             onClick = {
                 if (currentRoute != Screen.ReportItem.route) {
@@ -80,9 +98,28 @@ fun AppBottomBar(
             }
         )
         NavigationBarItem(
-
             icon = {
-
+                if (currentRoute == Screen.Conversations.route)
+                    Icon(Icons.Filled.ChatBubble, contentDescription = "Conversas")
+                else
+                    Icon(Icons.Outlined.ChatBubbleOutline, contentDescription = "Conversas")
+            },
+            label = { },
+            selected = currentRoute == Screen.Conversations.route,
+            onClick = {
+                if (currentRoute != Screen.Conversations.route) {
+                    navController.navigate(Screen.Conversations.route) {
+                        popUpTo(navController.graph.startDestinationId) {
+                            saveState = true
+                        }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                }
+            }
+        )
+        NavigationBarItem(
+            icon = {
                 if (loggedUser?.imageUrl != null && loggedUser.imageUrl.isNotBlank()) {
                     AsyncImage(
                         model = loggedUser.imageUrl,
@@ -98,11 +135,10 @@ fun AppBottomBar(
                         contentScale = ContentScale.Crop
                     )
                 } else {
-
-                    Icon(Icons.Default.Person, contentDescription = "Perfil")
+                    Icon(Icons.Outlined.Person, contentDescription = "Perfil")
                 }
             },
-            label = {  },
+            label = { },
             selected = currentRoute == Screen.Profile.route,
             onClick = {
                 if (currentRoute != Screen.Profile.route) {

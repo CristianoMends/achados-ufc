@@ -1,7 +1,6 @@
 package com.edu.achadosufc.viewModel
 
 import android.content.Context
-import android.net.ConnectivityManager
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.work.Constraints
@@ -25,6 +24,7 @@ class ReportViewModel(
 
     private val _message = MutableStateFlow<String?>(null)
     val message = _message.asStateFlow()
+
 
     fun submitReport(
         title: String,
@@ -50,25 +50,20 @@ class ReportViewModel(
             "IMAGE_URI" to imageUri.toString()
         )
 
-        // Define as restrições: o trabalho só será executado quando houver internet
         val constraints = Constraints.Builder()
             .setRequiredNetworkType(NetworkType.CONNECTED)
             .build()
 
-        // Cria a requisição de trabalho
         val uploadWorkRequest = OneTimeWorkRequestBuilder<ReportUploadWorker>()
             .setInputData(workData)
             .setConstraints(constraints)
             .build()
 
-        // Agenda o trabalho com o WorkManager
         WorkManager.getInstance(applicationContext).enqueue(uploadWorkRequest)
 
-        // FEEDBACK DE SUCESSO IMEDIATO PARA O USUÁRIO!
         _isLoading.value = false
         _success.value = true
         _message.value = "Publicação enviada para fila de upload. Você receberá uma notificação quando for processada."
-
     }
 
     fun resetSuccessState() {

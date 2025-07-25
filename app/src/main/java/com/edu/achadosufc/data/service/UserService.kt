@@ -18,5 +18,4 @@ interface UserService {
 
     @GET("users/search")
     suspend fun getUserByEmail(@Query("email") email: String): Response<UserResponse?>
-
 }

@@ -41,6 +41,22 @@ class ItemRepository(
         }
     }
 
+    suspend fun fetchItemByIdAndSave(itemId: Int): Item? {
+        try {
+            val response = api.getItemById(itemId)
+            if (response != null && response.isSuccessful) {
+                val itemFromApi = response.body()
+                itemFromApi?.let {
+                    itemDao.insertItem(it.toItemEntity())
+                    return it
+                }
+            }
+        } catch (e: Exception) {
+            Log.e("ItemRepository", "Error fetching item by ID and saving: ${e.message}")
+        }
+        return null
+    }
+
 
     suspend fun getItemById(itemId: Int): Item? {
         val localItem = itemDao.getItemById(itemId)?.toItem()
@@ -151,8 +167,9 @@ class ItemRepository(
         description: String,
         location: String,
         file: MultipartBody.Part,
-        isFound: Boolean
+        isFound: Boolean,
     ) {
+
         val response = api.create(
             token = token,
             title = title.toRequestBody(MultipartBody.FORM),

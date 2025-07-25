@@ -1,7 +1,8 @@
 package com.edu.achadosufc.worker
 
+import android.app.NotificationManager
 import android.content.Context
-import android.net.Uri
+import androidx.core.net.toUri
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.edu.achadosufc.data.SessionManager
@@ -15,7 +16,6 @@ class ReportUploadWorker(
     private val sessionManager: SessionManager
 ) : CoroutineWorker(appContext, workerParams) {
 
-
     override suspend fun doWork(): Result {
 
         val title = inputData.getString("TITLE") ?: return Result.failure()
@@ -23,10 +23,11 @@ class ReportUploadWorker(
         val location = inputData.getString("LOCATION") ?: return Result.failure()
         val isFound = inputData.getBoolean("IS_FOUND", false)
         val imageUriString = inputData.getString("IMAGE_URI") ?: return Result.failure()
-        val imageUri = Uri.parse(imageUriString)
+        val imageUri = imageUriString.toUri()
 
         return try {
             val filePart = FileUtils.prepareResizedFilePart(imageUri, applicationContext)
+
             val token = "Bearer " + sessionManager.fetchAuthToken()
 
             val res = itemRepository.create(

@@ -1,7 +1,6 @@
 package com.edu.achadosufc.data.service
 
 import com.edu.achadosufc.data.model.Item
-import com.edu.achadosufc.data.model.ItemRequest
 import okhttp3.RequestBody
 import retrofit2.Response
 import retrofit2.http.Body

@@ -54,11 +54,15 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.edu.achadosufc.R
+import com.edu.achadosufc.ui.components.LoadingDialog
 import com.edu.achadosufc.ui.components.MessageDialog
+import com.edu.achadosufc.ui.theme.ufcAzulClaro
+import com.edu.achadosufc.ui.theme.ufcAzulPrincipal
+import com.edu.achadosufc.ui.theme.ufcCinzaClaro
+import com.edu.achadosufc.ui.theme.ufcCinzaEscuro
 import com.edu.achadosufc.viewModel.LoginViewModel
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.common.api.ApiException
@@ -133,7 +137,7 @@ fun LoginScreen(
             shape = RoundedCornerShape(16.dp),
             elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
             colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f)
+                containerColor = Color.White.copy(alpha = 0.95f)
             )
         ) {
             Column(
@@ -142,6 +146,12 @@ fun LoginScreen(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
+
+                LoadingDialog(
+                    isLoading = loading,
+                    message = "Carregando..."
+                )
+
 
                 Image(
                     painter = painterResource(id = R.drawable.brasao2_vertical_cor_72dpi),
@@ -157,13 +167,13 @@ fun LoginScreen(
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = MaterialTheme.colorScheme.primary,
-                        unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
-                        focusedLabelColor = MaterialTheme.colorScheme.primary,
-                        unfocusedLabelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                        focusedTextColor = MaterialTheme.colorScheme.onSurface,
-                        unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
-                        cursorColor = MaterialTheme.colorScheme.primary
+                        focusedBorderColor = ufcAzulPrincipal,
+                        unfocusedBorderColor = Color.Gray.copy(alpha = 0.3f),
+                        focusedLabelColor = ufcAzulClaro,
+                        unfocusedLabelColor = Color.Gray.copy(alpha = 0.6f),
+                        focusedTextColor = Color.Black,
+                        unfocusedTextColor = Color.Black,
+                        cursorColor = ufcAzulPrincipal
                     ),
                     shape = RoundedCornerShape(8.dp),
                     keyboardOptions = KeyboardOptions(
@@ -186,20 +196,24 @@ fun LoginScreen(
 
 
                         IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                            Icon(imageVector = image, description, tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                            Icon(
+                                imageVector = image,
+                                description,
+                                tint = Color.Gray.copy(alpha = 0.6f)
+                            )
                         }
 
                     },
 
                     singleLine = true,
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = MaterialTheme.colorScheme.primary,
-                        unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
-                        focusedLabelColor = MaterialTheme.colorScheme.primary,
-                        unfocusedLabelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                        focusedTextColor = MaterialTheme.colorScheme.onSurface,
-                        unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
-                        cursorColor = MaterialTheme.colorScheme.primary
+                        focusedBorderColor = ufcAzulPrincipal,
+                        unfocusedBorderColor = Color.Gray.copy(alpha = 0.3f),
+                        focusedLabelColor = ufcAzulClaro,
+                        unfocusedLabelColor = Color.Gray.copy(alpha = 0.6f),
+                        focusedTextColor = Color.Black,
+                        unfocusedTextColor = Color.Black,
+                        cursorColor = ufcAzulPrincipal
                     ),
                     shape = RoundedCornerShape(8.dp),
                     modifier = Modifier.fillMaxWidth(),
@@ -242,17 +256,13 @@ fun LoginScreen(
                         .height(48.dp),
                     enabled = (email.isNotBlank() && password.isNotBlank()) && !loading,
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary,
-                        contentColor = MaterialTheme.colorScheme.onPrimary
+                        containerColor = ufcAzulPrincipal,
+                        contentColor = ufcCinzaClaro,
+                        disabledContainerColor = Color.Gray.copy(alpha = 0.5f)
                     ),
                     shape = RoundedCornerShape(8.dp)
                 ) {
-                    if (loading) {
-                        CircularProgressIndicator(
-                            color = MaterialTheme.colorScheme.onPrimary,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    } else { Text("Entrar", style = MaterialTheme.typography.labelLarge) }
+                    Text("Entrar", style = MaterialTheme.typography.labelLarge)
                 }
                 Spacer(modifier = Modifier.height(16.dp))
 
@@ -268,30 +278,30 @@ fun LoginScreen(
                         .height(48.dp)
                         .border(
                             width = 1.dp,
-                            color = MaterialTheme.colorScheme.outline,
+                            color = Color.Gray.copy(alpha = 0.5f),
                             shape = RoundedCornerShape(8.dp)
                         ),
                     shape = RoundedCornerShape(8.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color.Transparent,
-                        contentColor = MaterialTheme.colorScheme.onSurface
+                        contentColor = Color.Black
                     )
                 ) {
                     Icon(
                         painter = painterResource(id = R.drawable.google_icon),
                         contentDescription = "Google Login",
                         modifier = Modifier.size(24.dp),
-                        tint = Color.Unspecified // Mantém a cor original do ícone
+                        tint = Color.Unspecified
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text("Entrar com o Google", style = MaterialTheme.typography.labelLarge)
                 }
 
                 Text(
-                    text = "Criar conta",
-                    color = MaterialTheme.colorScheme.primary,
+                    text = "Não tem uma conta? Criar conta",
+                    color = ufcAzulPrincipal,
                     style = MaterialTheme.typography.bodyLarge,
-                    textDecoration = TextDecoration.None, // Remover sublinhado padrão e usar estilo do MaterialTheme
+                    textDecoration = TextDecoration.None,
                     modifier = Modifier.clickable {
                         navController.navigate(Screen.SignUp.route)
                     }

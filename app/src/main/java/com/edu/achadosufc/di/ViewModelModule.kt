@@ -12,6 +12,6 @@ val viewModelModule = module {
     viewModel { UserViewModel(get(), get(), get(), androidContext()) }
     viewModel { ItemViewModel(get()) }
     viewModel { ReportViewModel(androidContext()) }
-    viewModel { ChatViewModel(get(), get()) }
-    viewModel { SignUpViewModel(get(), get(), androidContext(), get()) }
+    viewModel { ChatViewModel(get()) }
+    viewModel { SignUpViewModel(get(), get(), androidContext()) }
 }

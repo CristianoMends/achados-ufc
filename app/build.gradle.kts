@@ -1,3 +1,14 @@
+import java.util.Properties
+import java.io.FileInputStream
+
+val localProperties = Properties()
+val localPropertiesFile = rootProject.file("local.properties")
+if (localPropertiesFile.exists()) {
+    FileInputStream(localPropertiesFile).use { fis ->
+        localProperties.load(fis)
+    }
+}
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -18,6 +29,16 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        buildConfigField(
+            type = "String",
+            name = "BASE_URL",
+            value = "\"${localProperties.getProperty("BASE_URL")}\""
+        )
+    }
+    buildFeatures {
+        compose = true
+        buildConfig = true
     }
 
     buildTypes {
@@ -37,39 +58,37 @@ android {
     kotlinOptions {
         jvmTarget = "11"
     }
-    buildFeatures {
-        compose = true
-    }
 }
 
 val koin_version = "3.5.6"
 
 
 dependencies {
+    implementation("com.google.firebase:firebase-messaging:24.1.1")
+
     implementation("com.google.firebase:firebase-auth:24.0.0")
     implementation(platform("com.google.firebase:firebase-bom:33.1.2"))
     implementation("com.google.android.gms:play-services-auth:20.7.0")
     implementation(platform("com.google.firebase:firebase-bom:34.0.0"))
     implementation("com.google.firebase:firebase-analytics")
 
-    implementation ("io.insert-koin:koin-android:$koin_version")
-    implementation ("io.insert-koin:koin-androidx-compose:$koin_version")
-    implementation ("io.insert-koin:koin-androidx-workmanager:$koin_version")
+    implementation("io.insert-koin:koin-android:$koin_version")
+    implementation("io.insert-koin:koin-androidx-compose:$koin_version")
+    implementation("io.insert-koin:koin-androidx-workmanager:$koin_version")
 
     implementation("androidx.work:work-runtime-ktx:2.9.0")
 
-    implementation("io.socket:socket.io-client:2.1.0")
-
-    implementation ("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
-    implementation ("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
 
 
-    implementation ("androidx.room:room-runtime:2.6.1")
+    implementation("androidx.room:room-runtime:2.6.1")
     implementation(libs.firebase.firestore.ktx)
+    implementation(libs.androidx.adapters)
     ksp("androidx.room:room-compiler:2.6.1")
-    implementation ("androidx.room:room-ktx:2.6.1")
+    implementation("androidx.room:room-ktx:2.6.1")
 
-    implementation ("androidx.compose.foundation:foundation:1.6.8")
+    implementation("androidx.compose.foundation:foundation:1.6.8")
     implementation("dev.materii.pullrefresh:pullrefresh-desktop:1.3.0")
     implementation(libs.retrofit)
     implementation(libs.converter.gson)

@@ -180,7 +180,6 @@ fun ReportItemScreen(
     val currentRoute = navBackStackEntry?.destination?.route
 
     var selectedImageUri by rememberSaveable { mutableStateOf<Uri?>(null) }
-    var isFound by rememberSaveable { mutableStateOf(true) }
 
     var showDialog by remember { mutableStateOf(false) }
     val isLoading by reportViewModel.isLoading.collectAsState()
@@ -227,7 +226,6 @@ fun ReportItemScreen(
             description = ""
             selectedLocation = ""
             selectedImageUri = null
-            isFound = true
         }
     }
 
@@ -384,9 +382,6 @@ fun ReportItemScreen(
                 }
             }
 
-
-            SegmentedButtonControl(isLost = isFound, onOptionSelected = { isFound = it })
-
             ImageSelector(
                 selectedImageUri = selectedImageUri,
                 onClick = { showImageSourceDialog = true }
@@ -404,7 +399,7 @@ fun ReportItemScreen(
                         title = title,
                         description = description,
                         location = selectedLocation,
-                        isFound = isFound,
+                        isFound = false,
                         imageUri = selectedImageUri
                     )
                 },

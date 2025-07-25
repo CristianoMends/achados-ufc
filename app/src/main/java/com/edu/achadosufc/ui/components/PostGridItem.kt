@@ -14,7 +14,7 @@ import coil.compose.AsyncImage
 import com.edu.achadosufc.data.model.Item
 
 @Composable
-fun PostGridItem(item: Item, onClick: () -> Unit) { // Supondo que seu modelo de item se chame Item
+fun PostGridItem(item: Item, onClick: () -> Unit) {
     Box(
         modifier = Modifier
             .aspectRatio(1f)

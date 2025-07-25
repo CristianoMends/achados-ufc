@@ -19,7 +19,6 @@ class SignUpViewModel(
     private val uploadRepository: FileRepository,
     private val userRepository: UserRepository,
     private val applicationContext: Context,
-    private val loginViewModel: LoginViewModel
 ) : ViewModel() {
 
     private val _name = MutableStateFlow("")

@@ -2,17 +2,13 @@ package com.edu.achadosufc.navigation
 
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.edu.achadosufc.ui.screen.ChatScreen
+import com.edu.achadosufc.ui.screen.ConversationsScreen
 import com.edu.achadosufc.ui.screen.HomeScreen
 import com.edu.achadosufc.ui.screen.ItemDetailScreen
 import com.edu.achadosufc.ui.screen.LoginScreen
@@ -23,14 +19,6 @@ import com.edu.achadosufc.ui.screen.SignUpScreen
 import com.edu.achadosufc.ui.screen.SplashScreen
 import com.edu.achadosufc.ui.screen.UserDetailScreen
 import com.edu.achadosufc.ui.screen.UserProfileScreen
-import com.edu.achadosufc.viewModel.ChatViewModel
-import com.edu.achadosufc.viewModel.HomeViewModel
-import com.edu.achadosufc.viewModel.ItemViewModel
-import com.edu.achadosufc.viewModel.LoginViewModel
-import com.edu.achadosufc.viewModel.ReportViewModel
-import com.edu.achadosufc.viewModel.SignUpViewModel
-import com.edu.achadosufc.viewModel.ThemeViewModel
-import com.edu.achadosufc.viewModel.UserViewModel
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
@@ -60,6 +48,7 @@ fun AppNavHost(
                     itemViewModel = koinViewModel(),
                     loginViewModel = koinViewModel(),
                     themeViewModel = koinViewModel(),
+                    chatViewModel = koinViewModel()
                 )
             } else {
                 Text(text = "Erro: ID do item não encontrado.")
@@ -68,27 +57,38 @@ fun AppNavHost(
         composable(
             route = Screen.Chat.route,
             arguments = listOf(
-                navArgument("recipientId") { type = NavType.IntType },
-                navArgument("recipientUsername") { type = NavType.StringType },
-                navArgument("recipientPhotoUrl") {
+                navArgument("chatId") { type = NavType.StringType },
+                navArgument("recipientName") { type = NavType.StringType },
+                navArgument("itemTitle") { type = NavType.StringType },
+                navArgument("itemImageUrl") {
                     type = NavType.StringType
                     nullable = true
+                },
+                navArgument("senderId"){
+                    type = NavType.StringType
                 }
             )
         ) { backStackEntry ->
-            val recipientId = backStackEntry.arguments?.getInt("recipientId") ?: -1
-            val recipientUsername = backStackEntry.arguments?.getString("recipientUsername") ?: ""
-            val recipientPhotoUrl = backStackEntry.arguments?.getString("recipientPhotoUrl")
+            val chatId = backStackEntry.arguments?.getString("chatId") ?: ""
+            val recipientName = backStackEntry.arguments?.getString("recipientName") ?: ""
+            val recipientId = backStackEntry.arguments?.getString("recipientId") ?: ""
+            val itemId = backStackEntry.arguments?.getString("itemId") ?: ""
+            val itemTitle = backStackEntry.arguments?.getString("itemTitle") ?: ""
+            val itemImageUrl = backStackEntry.arguments?.getString("itemImageUrl")
+            val senderId = backStackEntry.arguments?.getString("senderId") ?: ""
 
 
-            if (recipientId != -1 && recipientUsername.isNotEmpty()) {
+            if (chatId.isNotEmpty() && recipientName.isNotEmpty()) {
                 ChatScreen(
                     navController = navController,
                     chatViewModel = koinViewModel(),
-                    loginViewModel = koinViewModel(),
+                    chatId = chatId,
                     recipientId = recipientId,
-                    recipientUsername = recipientUsername,
-                    recipientPhotoUrl = recipientPhotoUrl
+                    recipientName = recipientName,
+                    itemId = itemId,
+                    itemTitle = itemTitle,
+                    itemImageUrl = itemImageUrl,
+                    senderId = senderId
                 )
             } else {
                 Text(text = "Erro: Destinatário inválido.")
@@ -109,6 +109,14 @@ fun AppNavHost(
                 reportViewModel = koinViewModel(),
                 themeViewModel = koinViewModel(),
                 loginViewModel = koinViewModel()
+            )
+        }
+        composable(Screen.Conversations.route) {
+            ConversationsScreen(
+                navController = navController,
+                chatViewModel = koinViewModel(),
+                loginViewModel = koinViewModel(),
+                themeViewModel = koinViewModel(),
             )
         }
         composable(Screen.Login.route) {

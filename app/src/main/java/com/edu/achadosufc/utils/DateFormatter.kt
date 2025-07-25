@@ -3,6 +3,9 @@ package com.edu.achadosufc.utils
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 import java.util.Date
+import com.google.firebase.Timestamp
+import java.text.SimpleDateFormat
+import java.util.*
 
 
 fun getRelativeTime(dateString: String?): String {
@@ -46,4 +49,36 @@ fun getRelativeTime(dateString: String?): String {
 fun formatTimestampToTime(createdAt: Date): String{
     val formatter = DateTimeFormatter.ofPattern("HH:mm")
     return createdAt.toInstant().atZone(java.time.ZoneId.of("America/Sao_Paulo")).toLocalDateTime().format(formatter)
+}
+
+
+
+fun formatTimestamp(timestamp: Timestamp?): String {
+    if (timestamp == null) return ""
+
+    val date = timestamp.toDate()
+    val now = Calendar.getInstance()
+    val then = Calendar.getInstance().apply { time = date }
+
+    return when {
+        isSameDay(now, then) -> {
+            SimpleDateFormat("HH:mm", Locale.getDefault()).format(date) // Ex: 14:32
+        }
+        isYesterday(now, then) -> {
+            "Ontem"
+        }
+        else -> {
+            SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(date) // Ex: 21/07/2025
+        }
+    }
+}
+
+private fun isSameDay(cal1: Calendar, cal2: Calendar): Boolean {
+    return cal1.get(Calendar.YEAR) == cal2.get(Calendar.YEAR) &&
+            cal1.get(Calendar.DAY_OF_YEAR) == cal2.get(Calendar.DAY_OF_YEAR)
+}
+
+private fun isYesterday(today: Calendar, date: Calendar): Boolean {
+    today.add(Calendar.DAY_OF_YEAR, -1)
+    return isSameDay(today, date)
 }

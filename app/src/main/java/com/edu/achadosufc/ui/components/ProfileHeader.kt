@@ -20,9 +20,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import com.edu.achadosufc.R
 import com.edu.achadosufc.data.model.UserResponse
 
 @Composable
@@ -46,6 +48,8 @@ fun ProfileHeader(
                 model = user.imageUrl,
                 contentDescription = "Foto de Perfil",
                 contentScale = ContentScale.Crop,
+                placeholder = painterResource(id = R.drawable.portrait_placeholder),
+                error = painterResource(id = R.drawable.portrait_placeholder),
                 modifier = Modifier
                     .size(90.dp)
                     .clip(CircleShape)
@@ -65,14 +69,6 @@ fun ProfileHeader(
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         Spacer(modifier = Modifier.height(16.dp))
-
-        Button(
-            onClick = onEditProfileClick,
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(8.dp)
-        ) {
-            Text("Editar Perfil")
-        }
         HorizontalDivider(modifier = Modifier.padding(top = 24.dp))
     }
 }

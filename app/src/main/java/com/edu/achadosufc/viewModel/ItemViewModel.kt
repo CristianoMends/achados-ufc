@@ -2,7 +2,6 @@ package com.edu.achadosufc.viewModel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.edu.achadosufc.data.model.Item
 import com.edu.achadosufc.data.repository.ItemRepository
 import kotlinx.coroutines.flow.MutableStateFlow

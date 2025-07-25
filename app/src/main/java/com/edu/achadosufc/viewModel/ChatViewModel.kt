@@ -1,105 +1,98 @@
 package com.edu.achadosufc.viewModel
 
-import com.edu.achadosufc.data.service.ChatSocketService
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.edu.achadosufc.data.model.MessageResponse
-import com.edu.achadosufc.data.model.UserResponse
+import com.edu.achadosufc.data.model.Conversation
+import com.edu.achadosufc.data.model.Message
+import com.edu.achadosufc.data.repository.ChatRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import java.util.Date
-import kotlin.random.Random
 
 class ChatViewModel(
-    private val loginViewModel: LoginViewModel,
-    private val chatSocketService: ChatSocketService,
-    ) : ViewModel() {
+    private val chatRepository: ChatRepository
+) : ViewModel() {
 
-    private val _messages = MutableStateFlow<List<MessageResponse>>(emptyList())
+    private val _messages = MutableStateFlow<List<Message>>(emptyList())
     val messages = _messages.asStateFlow()
 
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
-    init {
-        Log.d("ChatViewModel", "ViewModel inicializado. Observando o usuário...")
+    private val _conversations = MutableStateFlow<List<Conversation>>(emptyList())
+    val conversations = _conversations.asStateFlow()
 
-        viewModelScope.launch {
-            loginViewModel.loggedUser.collect { user ->
-                if (user != null) {
-                    Log.d(
-                        "ChatViewModel",
-                        "Usuário logado detectado com ID: ${user.id}. Conectando ao chat..."
-                    )
-                    chatSocketService.connect()
-                }
-            }
-        }
-
-        viewModelScope.launch {
-            chatSocketService.incomingMessages.collect { newMessage ->
-                Log.d("ChatViewModel", "Nova mensagem em tempo real recebida: ${newMessage.text}")
-                _messages.value += newMessage
-            }
-        }
-        viewModelScope.launch {
-            chatSocketService.chatHistory.collect { history ->
-                Log.d("ChatViewModel", "Histórico de chat recebido: ${history.size} mensagens.")
-                _messages.value = history
-            }
-        }
-    }
-
-    fun getChatHistory(otherUserId: Int) {
+    fun getUserConversations(userId: String) {
         _isLoading.value = true
-        _messages.value = emptyList()
         viewModelScope.launch {
-            chatSocketService.getChatHistory(otherUserId)
-            _isLoading.value = false
-        }
-    }
-
-    fun sendMessage(senderId: Int, recipientId: Int, text: String) {
-        _isLoading.value = true
-        if (text.isNotBlank()) {
-            chatSocketService.sendPrivateMessage(senderId, recipientId, text)
-
-            val currentUser = loginViewModel.loggedUser.value
-            if (currentUser != null) {
-                val sentMessage = MessageResponse(
-                    id = Random.nextInt(Int.MIN_VALUE, 0),
-                    text = text,
-                    createdAt = Date(),
-                    sender = UserResponse(
-                        id = currentUser.id,
-                        username = currentUser.username,
-                        email = currentUser.email,
-                        name = currentUser.name,
-                        surname = currentUser.surname,
-                        phone = currentUser.phone,
-                        imageUrl = currentUser.imageUrl ?: ""
-                    ),
-                    recipient = UserResponse(
-                        id = recipientId,
-                        username = "",
-                        email = "",
-                        name = "",
-                        surname = "",
-                        phone = "",
-                        imageUrl = ""
-                    )
-                )
-                _messages.value += sentMessage
+            try {
+                val convos = chatRepository.getUserConversations(userId)
+                _conversations.value = convos
+            } catch (e: Exception) {
+                Log.e("ChatVM", "Erro ao buscar conversas", e)
+                _conversations.value = emptyList()
+            } finally {
                 _isLoading.value = false
             }
         }
     }
 
-    override fun onCleared() {
-        super.onCleared()
-        chatSocketService.disconnect()
+    fun getConversationsForItem(itemId: String, userId: String) {
+        _isLoading.value = true
+        viewModelScope.launch {
+            try {
+                val conversations = chatRepository.getConversationsForItem(itemId, userId)
+                _conversations.value = conversations
+            } catch (e: Exception) {
+                Log.e("ChatVM", "Erro ao buscar conversas do item", e)
+                _conversations.value = emptyList()
+            } finally {
+                _isLoading.value = false
+            }
+        }
     }
+
+    fun sendMessage(chatId: String, text: String, senderId: String,recipientId: String, itemId: String) {
+        if (text.isBlank()) return
+
+        viewModelScope.launch {
+            try {
+                chatRepository.sendMessage(chatId, text, senderId, recipientId, itemId)
+            } catch (e: Exception) {
+                Log.e("ChatVM", "Erro ao enviar mensagem", e)
+            }
+        }
+    }
+
+    fun generateChatId(recipientId: String, itemId: String, currentUserId: String): String {
+        return chatRepository.generateChatId(currentUserId, recipientId, itemId)
+    }
+
+    fun listenToMessages(chatId: String) {
+        chatRepository.listenToMessages(
+            chatId = chatId,
+            onMessagesUpdate = { msgs ->
+                _messages.value = msgs
+            },
+            onError = {
+                Log.e("ChatVM", "Erro ao ouvir mensagens em tempo real", it)
+            }
+        )
+    }
+
+    fun listenUserConversations(userId: String) {
+        chatRepository.listenUserConversations(
+            userId = userId,
+            onUpdate = { updatedConversations ->
+                _conversations.value = updatedConversations
+            },
+            onError = { error ->
+                Log.e("ChatVM", "Erro ao escutar conversas em tempo real", error)
+            }
+        )
+    }
+
+
 }

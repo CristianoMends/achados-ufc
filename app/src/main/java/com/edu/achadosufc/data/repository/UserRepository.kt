@@ -1,6 +1,7 @@
 package com.edu.achadosufc.data.repository
 
 import android.util.Log
+import com.edu.achadosufc.data.dao.ItemDao
 import com.edu.achadosufc.data.dao.UserDao
 import com.edu.achadosufc.data.model.UserRequest
 import com.edu.achadosufc.data.model.UserResponse
@@ -14,7 +15,8 @@ import java.net.UnknownHostException
 
 class UserRepository(
     private val apiService: UserService,
-    private val userDao: UserDao
+    private val userDao: UserDao,
+    private val itemDao: ItemDao
 ) {
 
     fun getUserByIdLocal(userId: Int): Flow<UserResponse?> {
@@ -115,7 +117,6 @@ class UserRepository(
             throw e
         }
     }
-
 
     suspend fun createUser(userRequest: UserRequest): UserResponse? {
 

@@ -1,5 +1,6 @@
 package com.edu.achadosufc.ui.screen
 
+import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,7 +15,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
@@ -53,38 +53,42 @@ import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.edu.achadosufc.R
-import com.edu.achadosufc.data.model.MessageResponse
 import com.edu.achadosufc.ui.components.LoadingDialog
-import com.edu.achadosufc.utils.formatTimestampToTime
+import com.edu.achadosufc.utils.formatTimestamp
 import com.edu.achadosufc.viewModel.ChatViewModel
-import com.edu.achadosufc.viewModel.LoginViewModel
-import com.edu.achadosufc.viewModel.ThemeViewModel
-import kotlinx.coroutines.launch
+import com.google.firebase.Timestamp
+import com.google.firebase.auth.FirebaseAuth
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 @Composable
 fun ChatScreen(
     navController: NavController,
     chatViewModel: ChatViewModel,
-    loginViewModel: LoginViewModel,
-    recipientId: Int,
-    recipientUsername: String,
-    recipientPhotoUrl: String?
+    senderId: String,
+    chatId: String,
+    recipientId: String,
+    itemId: String,
+    recipientName: String,
+    itemTitle: String,
+    itemImageUrl: String?
 ) {
     val messages by chatViewModel.messages.collectAsStateWithLifecycle()
     var textState by remember { mutableStateOf("") }
-    val loggedUser by loginViewModel.loggedUser.collectAsState()
-    val currentUserId = loggedUser?.id
-
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
-
     val isLoading by chatViewModel.isLoading.collectAsState()
-    LaunchedEffect(loggedUser) {
 
+    val groupedMessages = messages.groupBy { message ->
+        formatFirestoreTimestampToDateKey(message.timestamp)
     }
 
-    LaunchedEffect(recipientId) {
-        chatViewModel.getChatHistory(recipientId)
+    val context = LocalContext.current
+
+
+    LaunchedEffect(chatId) {
+        chatViewModel.listenToMessages(chatId)
     }
 
     LaunchedEffect(messages.size) {
@@ -96,8 +100,9 @@ fun ChatScreen(
     Scaffold(
         topBar = {
             ChatTopBar(
-                recipientUsername = recipientUsername,
-                recipientPhotoUrl = recipientPhotoUrl,
+                recipientName = recipientName,
+                itemTitle = itemTitle,
+                itemImageUrl = itemImageUrl,
                 onBackClick = { navController.popBackStack() }
             )
         },
@@ -107,9 +112,9 @@ fun ChatScreen(
                     .padding(padding)
                     .fillMaxSize()
             ) {
-                if (isLoading) {
+                if (isLoading && messages.isEmpty()) {
                     LoadingDialog(
-                        isLoading = isLoading,
+                        isLoading = true,
                         message = "Carregando histórico de mensagens...",
                     )
                 } else
@@ -122,22 +127,34 @@ fun ChatScreen(
                             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            items(messages, key = { it.id!! }) { message ->
-                                val isCurrentUser = message.sender.id == currentUserId
-                                MessageBubble(
-                                    message = message,
-                                    isSentByCurrentUser = isCurrentUser
-                                )
+                            groupedMessages.forEach { (date, messagesForDate) ->
+                                item {
+                                    DateHeader(date)
+                                }
+                                items(messagesForDate) { message ->
+                                    val isCurrentUser = message.senderId == senderId
+
+                                    MessageBubble(
+                                        messageText = message.text,
+                                        messageTime = formatTimestamp(message.timestamp),
+                                        isSentByCurrentUser = isCurrentUser
+                                    )
+                                }
                             }
                         }
                     }
 
-                Text("Id do destinatário: $recipientId")
                 ChatInputBar(
                     text = textState,
                     onTextChange = { newText -> textState = newText },
                     onSendClick = {
-                        loggedUser?.let { chatViewModel.sendMessage(it.id, recipientId, textState) }
+                        chatViewModel.sendMessage(
+                            chatId = chatId,
+                            text = textState,
+                            recipientId = recipientId,
+                            itemId = itemId,
+                            senderId = senderId
+                        )
                         textState = ""
                     }
                 )
@@ -150,8 +167,9 @@ fun ChatScreen(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChatTopBar(
-    recipientUsername: String,
-    recipientPhotoUrl: String?,
+    recipientName: String,
+    itemTitle: String,
+    itemImageUrl: String?,
     onBackClick: () -> Unit
 ) {
     TopAppBar(
@@ -159,25 +177,23 @@ fun ChatTopBar(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 AsyncImage(
                     model = ImageRequest.Builder(LocalContext.current)
-                        .data(recipientPhotoUrl)
+                        .data(itemImageUrl)
                         .crossfade(true)
                         .build(),
                     placeholder = painterResource(id = R.drawable.brasao_vertical_cor),
                     error = painterResource(id = R.drawable.brasao_vertical_cor),
-                    contentDescription = "Foto de perfil de $recipientUsername",
+                    contentDescription = "Foto de perfil de $itemTitle",
                     contentScale = ContentScale.Crop,
                     modifier = Modifier
                         .size(42.dp)
-                        .clip(CircleShape)
+                        .clip(RoundedCornerShape(8.dp))
                 )
                 Spacer(modifier = Modifier.width(12.dp))
                 Column {
-                    Text(text = recipientUsername, style = MaterialTheme.typography.titleMedium)
-
                     Text(
-                        text = "🟢 Online",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        text = "$recipientName sobre \"$itemTitle\"",
+                        style = MaterialTheme.typography.titleMedium,
+                        maxLines = 2
                     )
                 }
             }
@@ -194,7 +210,7 @@ fun ChatTopBar(
 }
 
 @Composable
-fun MessageBubble(message: MessageResponse, isSentByCurrentUser: Boolean) {
+fun MessageBubble(messageText: String, messageTime: String, isSentByCurrentUser: Boolean) {
     val bubbleColor = if (isSentByCurrentUser) {
         MaterialTheme.colorScheme.primary
     } else {
@@ -208,11 +224,9 @@ fun MessageBubble(message: MessageResponse, isSentByCurrentUser: Boolean) {
     }
 
 
-    val horizontalArrangement = if (isSentByCurrentUser) Arrangement.End else Arrangement.Start
-
     Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = horizontalArrangement
+        horizontalArrangement = if (isSentByCurrentUser) Arrangement.End else Arrangement.Start
     ) {
         Surface(
             color = bubbleColor,
@@ -229,12 +243,12 @@ fun MessageBubble(message: MessageResponse, isSentByCurrentUser: Boolean) {
                 horizontalAlignment = Alignment.End
             ) {
                 Text(
-                    text = message.text,
+                    text = messageText,
                     color = textColor,
                     style = MaterialTheme.typography.bodyLarge,
                 )
                 Text(
-                    text = formatTimestampToTime(message.createdAt),
+                    text = messageTime,
                     color = textColor.copy(alpha = 0.7f),
                     style = MaterialTheme.typography.bodySmall,
                     modifier = Modifier.padding(top = 4.dp)
@@ -246,6 +260,16 @@ fun MessageBubble(message: MessageResponse, isSentByCurrentUser: Boolean) {
 
 
     }
+}
+
+private fun formatFirestoreTimestampToDateKey(timestamp: Any?): String {
+    val date: Date = when (timestamp) {
+        is Timestamp -> timestamp.toDate()
+        is Date -> timestamp
+        else -> Date()
+    }
+
+    return SimpleDateFormat("dd MMM yyyy", Locale.getDefault()).format(date)
 }
 
 @Composable
@@ -306,5 +330,28 @@ fun EmptyChatContent(modifier: Modifier = Modifier) {
             textAlign = TextAlign.Center,
             modifier = Modifier.padding(32.dp)
         )
+    }
+}
+
+@Composable
+fun DateHeader(date: String) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Surface(
+            shape = RoundedCornerShape(16.dp),
+            color = MaterialTheme.colorScheme.surfaceVariant,
+            tonalElevation = 2.dp
+        ) {
+            Text(
+                text = date,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
+            )
+        }
     }
 }

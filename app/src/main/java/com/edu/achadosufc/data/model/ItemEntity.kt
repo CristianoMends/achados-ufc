@@ -15,15 +15,12 @@ data class ItemEntity(
     val date: String,
     val userId: Int,
 
-
     val userUsername: String?,
     val userEmail: String,
     val userImageUrl: String?,
     val userName: String,
     val userSurname: String?,
-    val userPhone: String?
-
-
+    val userPhone: String?,
 )
 
 fun Item.toItemEntity(): ItemEntity {
@@ -42,7 +39,7 @@ fun Item.toItemEntity(): ItemEntity {
         userImageUrl = this.user.imageUrl,
         userName = this.user.name,
         userSurname = this.user.surname,
-        userPhone = this.user.phone
+        userPhone = this.user.phone,
     )
 }
 
@@ -62,7 +59,7 @@ fun ItemEntity.toItem(): Item {
             imageUrl = this.userImageUrl,
             name = this.userName,
             phone = this.userPhone,
-            surname = this.userSurname
+            surname = this.userSurname,
         )
     )
 }
