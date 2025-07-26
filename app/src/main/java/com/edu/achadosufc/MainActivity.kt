@@ -3,23 +3,33 @@ package com.edu.achadosufc
 import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.core.app.ActivityCompat
+import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.edu.achadosufc.data.repository.ChatRepository
 import com.edu.achadosufc.navigation.AppNavHost
+import com.edu.achadosufc.ui.screen.Screen
 import com.edu.achadosufc.ui.theme.AchadosUFCTheme
+import com.edu.achadosufc.viewModel.LoginViewModel
 import com.edu.achadosufc.viewModel.ThemeViewModel
 import org.koin.androidx.compose.koinViewModel
+import org.koin.compose.koinInject
 
 
 class MainActivity : ComponentActivity() {
@@ -28,7 +38,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES .TIRAMISU) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             ActivityCompat.requestPermissions(
                 this,
                 arrayOf(android.Manifest.permission.POST_NOTIFICATIONS),
@@ -41,7 +51,32 @@ class MainActivity : ComponentActivity() {
             val themeMode by themeViewModel.themeMode.collectAsStateWithLifecycle()
             val navController = rememberNavController()
 
-            createNotificationChannels()
+            val chatRepository: ChatRepository = koinInject()
+
+            val loginViewModel: LoginViewModel = koinViewModel()
+            val loggedUser by loginViewModel.loggedUser.collectAsStateWithLifecycle()
+            val navBackStackEntry by navController.currentBackStackEntryAsState()
+
+            LaunchedEffect(loggedUser?.id) {
+                loggedUser?.id?.let { userId ->
+                    chatRepository.listenToNewMessages(
+                        userId.toString(),
+                        { m ->
+                            val currentRoute = navBackStackEntry?.destination?.route
+                            //if (currentRoute != Screen.Chat.route) {
+                                showNotification(
+                                    this@MainActivity,
+                                    m.title,
+                                    m.texto
+                                )
+                                Log.d("MainActivity", "Nova mensagem recebida: ${m.texto}")
+                           // }
+                        },
+                        { error -> Log.e("MainActivity", "Erro ao ouvir mensagens", error) }
+                    )
+                }
+            }
+
 
             AchadosUFCTheme(themeMode = themeMode) {
                 AppNavHost(
@@ -56,46 +91,38 @@ class MainActivity : ComponentActivity() {
         super.onNewIntent(intent)
         newIntent = intent
     }
+}
 
-    private fun createNotificationChannels() {
-        val notificationManager: NotificationManager =
-            getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+fun showNotification(context: Context, titulo: String, mensagem: String) {
+    val canalId = "mensagens_novas"
+    val notificationId = (System.currentTimeMillis() % 10000).toInt()
 
-        val itemChannel = NotificationChannel(
-            "item_reminder_channel",
-            "Lembretes de Itens",
-            NotificationManager.IMPORTANCE_DEFAULT
-        ).apply {
-            description = "Canal para receber lembretes sobre itens perdidos/achados."
-        }
-        notificationManager.createNotificationChannel(itemChannel)
-
-
-        val chatChannel = NotificationChannel(
-            "chat_messages_channel",
-            "Novas Mensagens",
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        val canal = NotificationChannel(
+            canalId,
+            "Mensagens Recebidas",
             NotificationManager.IMPORTANCE_HIGH
-        ).apply {
-            description = "Notificações para novas mensagens recebidas no chat."
-        }
-        notificationManager.createNotificationChannel(chatChannel)
+        )
+        val manager =
+            context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        manager.createNotificationChannel(canal)
     }
 
+    val builder = NotificationCompat.Builder(context, canalId)
+        .setSmallIcon(R.drawable.notification)
+        .setContentTitle(titulo)
+        .setContentText(mensagem)
+        .setPriority(NotificationCompat.PRIORITY_HIGH)
+        .setAutoCancel(true)
 
-    private val requestPermissionLauncher = registerForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { isGranted: Boolean ->
-        if (isGranted) {
-            // Permissão concedida
-        } else {
-
+    with(NotificationManagerCompat.from(context)) {
+        if (ActivityCompat.checkSelfPermission(
+                context,
+                Manifest.permission.POST_NOTIFICATIONS
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            return
         }
+        notify(notificationId, builder.build())
     }
-
-    private fun askNotificationPermission() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-        }
-    }
-
 }

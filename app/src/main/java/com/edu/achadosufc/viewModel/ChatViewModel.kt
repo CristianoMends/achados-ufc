@@ -1,18 +1,32 @@
 package com.edu.achadosufc.viewModel
 
+import android.Manifest
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.content.Context
+import android.content.pm.PackageManager
+import android.os.Build
 import android.util.Log
+import androidx.compose.ui.platform.LocalContext
+import androidx.core.app.ActivityCompat
+import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.edu.achadosufc.R
 import com.edu.achadosufc.data.model.Conversation
 import com.edu.achadosufc.data.model.Message
 import com.edu.achadosufc.data.repository.ChatRepository
+import com.google.firebase.firestore.DocumentChange
+import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 class ChatViewModel(
-    private val chatRepository: ChatRepository
+    private val chatRepository: ChatRepository,
+    private val context: Context
 ) : ViewModel() {
 
     private val _messages = MutableStateFlow<List<Message>>(emptyList())
@@ -54,7 +68,13 @@ class ChatViewModel(
         }
     }
 
-    fun sendMessage(chatId: String, text: String, senderId: String,recipientId: String, itemId: String) {
+    fun sendMessage(
+        chatId: String,
+        text: String,
+        senderId: String,
+        recipientId: String,
+        itemId: String
+    ) {
         if (text.isBlank()) return
 
         viewModelScope.launch {

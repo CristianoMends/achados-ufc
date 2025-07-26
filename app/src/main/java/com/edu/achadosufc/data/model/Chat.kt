@@ -5,13 +5,16 @@ data class Chat(
     val participants: List<String> = emptyList(),
     val itemId: String = "",
     val lastMessage: String = "",
-    val lastMessageTimestamp: Timestamp? = null
+    val lastMessageTimestamp: Timestamp? = null,
+    val recipientId: String? = "",
+    val senderId: String? = ""
 )
 data class Conversation(
     val chatId: String,
     val otherUser: UserInfo,
     val lastMessage: String,
     val lastMessageTimestamp: Timestamp?,
+    val recipientId: Int? = null,
     val itemInfo: ItemInfo? = null
 )
 

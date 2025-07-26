@@ -1,11 +1,20 @@
 package com.edu.achadosufc.viewModel
 
 
+import android.Manifest
+import android.app.NotificationChannel
+import android.app.NotificationManager
 import android.net.ConnectivityManager
 import android.content.Context
+import android.content.pm.PackageManager
+import android.os.Build
 import android.util.Log
+import androidx.core.app.ActivityCompat
+import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.edu.achadosufc.R
 import com.edu.achadosufc.data.SessionManager
 import com.edu.achadosufc.data.model.UserResponse
 import com.edu.achadosufc.data.repository.LoginRepository
@@ -13,6 +22,8 @@ import com.edu.achadosufc.data.UserPreferences
 import com.edu.achadosufc.data.repository.UserRepository
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.DocumentChange
+import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.messaging.FirebaseMessaging
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -92,13 +103,12 @@ class LoginViewModel(
                 _isAutoLoginCheckComplete.value = true
             }
         }
-
     }
 
     suspend fun loginWithGoogle(idToken: String) {
         logoutOnFirebase()
 
-        if (!isInternetAvailable()){
+        if (!isInternetAvailable()) {
             _error.value = "Sem conexão com a internet. Verifique sua conexão e tente novamente."
             _confirmButtonAction.value = { clearErrorMessage() }
             return
@@ -227,7 +237,8 @@ class LoginViewModel(
 
             } catch (e: retrofit2.HttpException) {
                 if (e.code() >= 500) {
-                    _error.value = "Servidor indisponível. Tente novamente mais tarde. ${e.code()} ${e.message()}"
+                    _error.value =
+                        "Servidor indisponível. Tente novamente mais tarde. ${e.code()} ${e.message()}"
                     _confirmButtonAction.value = { clearErrorMessage() }
                 } else {
                     _error.value = "Erro ao tentar fazer login: ${e.message()}"
@@ -274,7 +285,7 @@ class LoginViewModel(
         clearLoginFields()
     }
 
-    private suspend fun logoutOnFirebase(){
+    private suspend fun logoutOnFirebase() {
         FirebaseAuth.getInstance().signOut()
         try {
             val googleSignInClient = loginRepository.getGoogleSignInClient(context)

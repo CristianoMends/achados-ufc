@@ -18,9 +18,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import com.edu.achadosufc.R
 import com.edu.achadosufc.data.model.UserResponse
 
 @Composable
@@ -43,6 +45,8 @@ fun UserDetailHeader(
                 model = user.imageUrl,
                 contentDescription = "Foto de Perfil",
                 contentScale = ContentScale.Crop,
+                error = painterResource(id = R.drawable.portrait_placeholder),
+                placeholder = painterResource(id = R.drawable.portrait_placeholder),
                 modifier = Modifier
                     .size(90.dp)
                     .clip(CircleShape)

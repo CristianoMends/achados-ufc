@@ -4,10 +4,15 @@ import com.edu.achadosufc.data.model.Chat
 import com.edu.achadosufc.data.model.Conversation
 import com.edu.achadosufc.data.model.ItemInfo
 import com.edu.achadosufc.data.model.Message
+import com.edu.achadosufc.data.model.Notification
 import com.edu.achadosufc.data.model.UserInfo
+import com.google.firebase.firestore.DocumentChange
+import com.google.firebase.Timestamp
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.SetOptions
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
@@ -73,6 +78,7 @@ class ChatRepository(
     ) {
         firestore.collection("chats")
             .whereArrayContains("participants", userId)
+            .whereEqualTo("lastMessageTimestamp", Timestamp.now())
             .addSnapshotListener { snapshot, error ->
                 if (error != null) {
                     onError(error)
@@ -131,7 +137,6 @@ class ChatRepository(
     }
 
 
-
     suspend fun getConversationsForItem(itemId: String, currentUserId: String): List<Conversation> {
         val querySnapshot = firestore.collection("chats")
             .whereEqualTo("itemId", itemId)
@@ -141,9 +146,11 @@ class ChatRepository(
 
         return querySnapshot.documents.mapNotNull { doc ->
             val chat = doc.toObject(Chat::class.java) ?: return@mapNotNull null
-            val otherUserId = chat.participants.firstOrNull { it != currentUserId } ?: return@mapNotNull null
+            val otherUserId =
+                chat.participants.firstOrNull { it != currentUserId } ?: return@mapNotNull null
 
-            val user = userRepository.fetchUserByIdAndSave(otherUserId.toInt()) ?: return@mapNotNull null
+            val user =
+                userRepository.fetchUserByIdAndSave(otherUserId.toInt()) ?: return@mapNotNull null
 
             val userInfo = UserInfo(
                 id = otherUserId,
@@ -159,7 +166,6 @@ class ChatRepository(
             )
         }.sortedByDescending { it.lastMessageTimestamp }
     }
-
 
 
     suspend fun getMessages(chatId: String): List<Message> {
@@ -180,7 +186,7 @@ class ChatRepository(
         recipientId: String,
         itemId: String
     ) {
-        val message = Message(text = text, senderId = senderId)
+        val message = Message(text = text, senderId = senderId, recipientId = recipientId)
         val chatRef = firestore.collection("chats").document(chatId)
 
         chatRef.collection("messages").add(message).await()
@@ -189,6 +195,8 @@ class ChatRepository(
             "participants" to listOf(senderId, recipientId),
             "itemId" to itemId,
             "lastMessage" to text,
+            "recipientId" to recipientId,
+            "senderId" to senderId,
             "lastMessageTimestamp" to com.google.firebase.firestore.FieldValue.serverTimestamp()
         )
         chatRef.set(chatMetadata, SetOptions.merge()).await()
@@ -220,6 +228,47 @@ class ChatRepository(
                 if (snapshot != null) {
                     val messages = snapshot.toObjects(Message::class.java)
                     onMessagesUpdate(messages)
+                }
+            }
+    }
+
+    fun listenToNewMessages(
+        userId: String,
+        onNewMessage: (Notification) -> Unit,
+        onError: (Exception) -> Unit
+    ) {
+        firestore.collection("chats")
+            .whereArrayContains("participants", userId)
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    onError(error)
+                    return@addSnapshotListener
+                }
+
+                if (snapshot == null) return@addSnapshotListener
+
+                for (change in snapshot.documentChanges) {
+                    if (change.type == DocumentChange.Type.MODIFIED) {
+                        val chat = change.document.toObject(Chat::class.java)
+                        CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
+                            if (chat.recipientId == userId) {
+
+                                val senderId = chat.senderId?.toInt() ?: return@launch
+                                val message = chat.lastMessage
+
+                                userRepository.fetchUserByIdAndSave(senderId)
+                                val user = userRepository.getUserByIdLocal(senderId).first()
+
+                                val notification = Notification(
+                                    title = "Nova mensagem de ${user?.name}",
+                                    texto = message
+                                )
+
+                                withContext(kotlinx.coroutines.Dispatchers.Main) { onNewMessage(notification) }
+                            }
+
+                        }
+                    }
                 }
             }
     }

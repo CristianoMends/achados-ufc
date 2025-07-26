@@ -24,12 +24,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
+import com.edu.achadosufc.R
 import com.edu.achadosufc.data.model.Item
 import com.edu.achadosufc.ui.screen.Screen
 import com.edu.achadosufc.utils.getRelativeTime
@@ -68,6 +71,8 @@ fun ItemCard(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     AsyncImage(
                         model = item.user.imageUrl,
+                        placeholder = painterResource(id = R.drawable.portrait_placeholder),
+                        error = painterResource(id = R.drawable.portrait_placeholder),
                         contentDescription = "${item.user.name} Profile Image",
                         modifier = Modifier
                             .clickable {
